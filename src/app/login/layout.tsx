@@ -1,5 +1,5 @@
 export const metadata = {
-    title: "Toma POS | Login",
+    title: `${process.env.TITLE || "Toma POS"} | Login`,
     description: "One stop solution for your business",
 }
 
