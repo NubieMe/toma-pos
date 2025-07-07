@@ -69,13 +69,19 @@ model Role {
 }
 
 model Menu {
-  id        String  @id @default(uuid())
-  name      String
-  path      String?
-  parent_id String?
-  icon      String?
-  order     Int
-  is_active Boolean @default(true)
+  id           String    @id @default(uuid())
+  name         String
+  path         String?
+  parent_id    String?
+  icon         String?
+  order        Int
+  is_active    Boolean   @default(true)
+  created_date DateTime  @default(now())
+  updated_date DateTime? @updatedAt
+  created_by   String?
+  updated_by   String?
+  deleted_date DateTime?
+  deleted_by   String?
 
   parent   Menu?  @relation("MultiMenu", references: [id], fields: [parent_id], onUpdate: Cascade, onDelete: Cascade)
   children Menu[] @relation("MultiMenu")
@@ -94,6 +100,8 @@ model Permission {
   menu         Menu      @relation(fields: [menu_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
   created_date DateTime  @default(now())
   updated_date DateTime? @updatedAt
+  created_by   String?
+  updated_by   String?
 
   @@id([role_id, menu_id])
 }
