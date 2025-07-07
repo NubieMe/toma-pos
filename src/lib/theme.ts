@@ -19,6 +19,24 @@ const theme = createTheme({
   typography: {
     fontFamily: ['Poppins', 'sans-serif'].join(','),
   },
+  components: {
+    MuiTextField: {
+      defaultProps: {
+        autoComplete: 'off',
+        variant: 'standard',
+      }
+    },
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          textTransform: 'none',
+        },
+      },
+      defaultProps: {
+        variant: 'contained',
+      }
+    }
+  }
 })
 
 export default theme
