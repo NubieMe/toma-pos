@@ -2,6 +2,7 @@ import { Menu } from '@/types/menu'
 import EntityModal from '@/components/modal'
 import { useForm } from 'react-hook-form'
 import {
+  AlertColor,
   Autocomplete,
   Checkbox,
   FormControlLabel,
@@ -13,6 +14,7 @@ import { z } from 'zod'
 import useMenuStore from '@/store/menu'
 import { useEffect } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { toast } from '@/hooks/use-toast'
 
 interface Props {
   open: boolean
@@ -56,19 +58,28 @@ export default function MenuModal({
   }, [open, initialData, reset])
 
   const onSubmit = handleSubmit(async (body) => {
-    const url = mode === 'add' ? '/api/menu' : `/api/menu/${initialData?.id}`
-    const res = await fetch(url, {
-      method: mode === 'add' ? 'POST' : 'PATCH',
-      body: JSON.stringify(body),
-    })
-    const data = (await res.json()).data
+    toast({ variant: 'info', description: 'Saving...' })
+    try {
+      const url = mode === 'add' ? '/api/menu' : `/api/menu/${initialData?.id}`
+      const res = await fetch(url, {
+        method: mode === 'add' ? 'POST' : 'PATCH',
+        body: JSON.stringify(body),
+      })
+      const parsed = await res.json()
+  
+      let variant: AlertColor = 'warning'
+      if (parsed) {
+        if (mode === 'add') addMenu(parsed.data)
+        else editMenu(parsed.data)
 
-    if (data) {
-      if (mode === 'add') addMenu(data)
-      else editMenu(data)
+        variant = 'success'
+      }
+      
+      toast({ variant, description: parsed.message })
+      onClose()
+    } catch (error) {
+      toast({ variant: 'error', description: (error as Error).message })
     }
-    
-    onClose()
   })
 
   return (

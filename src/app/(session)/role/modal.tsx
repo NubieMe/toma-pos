@@ -2,6 +2,7 @@ import { Role } from '@prisma/client'
 import EntityModal from '@/components/modal'
 import { useForm } from 'react-hook-form'
 import {
+  AlertColor,
   Stack,
   TextField,
 } from '@mui/material'
@@ -51,16 +52,19 @@ export default function RoleModal({
         body: JSON.stringify(body),
       })
       const data = (await res.json())
-  
-      if (data) {
+
+      let variant: AlertColor = 'warning'
+      if (data.ok) {
         if (mode === 'add') addRole(data.data)
         else editRole(data.data)
+
+        variant = 'success'
       }
-      toast({ description: data.message })
+      toast({ description: data.message, variant })
     } catch (error) {
       toast({
         description: (error as Error).message,
-        variant: 'warning',
+        variant: 'error',
       })
     }
     
