@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { createSessionCookie } from '@/lib/session'
+import { createSessionCookie } from '@/utils/session'
 import { compare } from 'bcryptjs'
 import { Session } from '@/types/session'
 
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
   }
 
   const res = NextResponse.json({ data: payload })
-  const token = createSessionCookie(payload)
+  const token = await createSessionCookie(payload)
   res.headers.append('Set-Cookie', token)
   return res
 }
