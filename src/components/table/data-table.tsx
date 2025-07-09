@@ -45,6 +45,14 @@ interface DataTableProps<T extends Record<string, any>> {
   getRowActions?: (row: T) => ('edit' | 'view' | 'delete')[]
   onActionClick?: (action: 'edit' | 'view' | 'delete', row: T) => void
   loading: boolean
+  order: 'asc' | 'desc'
+  setOrder: React.Dispatch<React.SetStateAction<'asc' | 'desc'>>
+  orderBy: keyof T
+  setOrderBy: React.Dispatch<React.SetStateAction<keyof T>>
+  page: number
+  setPage: React.Dispatch<React.SetStateAction<number>>
+  rowsPerPage: number
+  setRowsPerPage: React.Dispatch<React.SetStateAction<number>>
 }
 
 export default function DataTable<T extends Record<string, any>>({
@@ -56,12 +64,16 @@ export default function DataTable<T extends Record<string, any>>({
   getRowActions,
   onActionClick,
   loading,
+  order,
+  setOrder,
+  orderBy,
+  setOrderBy,
+  page,
+  setPage,
+  rowsPerPage,
+  setRowsPerPage,
 }: DataTableProps<T>) {
-  const [order, setOrder] = React.useState<'asc' | 'desc'>('asc')
-  const [orderBy, setOrderBy] = React.useState<keyof T>(columns[0].key)
   const [selected, setSelected] = React.useState<readonly (string | number)[]>([])
-  const [page, setPage] = React.useState(0)
-  const [rowsPerPage, setRowsPerPage] = React.useState(10)
 
   const handleRequestSort = (
     event: React.MouseEvent<unknown>,
@@ -207,10 +219,11 @@ export default function DataTable<T extends Record<string, any>>({
           </table>
         </TableContainer>
         <TablePagination
-          rowsPerPageOptions={[10, 20, 50, 100]}
+          rowsPerPageOptions={[10, 20, 50, 100, 500, 1000]}
           component="div"
           count={rows.length}
           rowsPerPage={rowsPerPage}
+          labelRowsPerPage="Data per page"
           page={page}
           onPageChange={(_, newPage) => setPage(newPage)}
           onRowsPerPageChange={(e) => {

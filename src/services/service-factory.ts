@@ -54,34 +54,46 @@ export class ServiceFactory {
 
   static async getAll<T extends keyof PrismaClient>(
     model: T,
-    query: any,
+    query: URLSearchParams,
     include?: Prisma.Args<PrismaClient[T], 'findMany'>['include'],
     select?: Prisma.Args<PrismaClient[T], 'findMany'>['select']
   ) {
-    const page = parseInt(query.page) || 1
-    const limit = parseInt(query.limit) || 10
+    const page = parseInt(query.get('page')!) || 1
+    const limit = parseInt(query.get('limit')!) || 10
     const skip = (page - 1) * limit
-    const sort = { id: 'desc' }
-    delete query.page; delete query.limit; delete query.sort
+    const search = query.get('search') ? JSON.parse(query.get('search')!) : {}
+    const order = query.get('order')
+    let orderBy: Prisma.Args<PrismaClient[T], 'findMany'>['orderBy'] = { id: 'desc' }
+    console.log(search, 'search', typeof search)
+    if (order) {
+      const sort = order.split('-')
 
-    const where: any = { deleted_date: null }
-    Object.keys(query).forEach(key => {
-      if (Array.isArray(query[key])) {
-        where[key] = { in: query[key] }
+      orderBy = { [sort[0]]: sort[1] }
+    }
+
+    const where: Prisma.Args<PrismaClient[T], 'findMany'>['where'] = { deleted_date: null }
+    Object.keys(search).forEach(key => {
+      if (Array.isArray(search[key])) {
+        where[key] = { in: search[key] }
       } else if (key.endsWith('_id')) {
-        where[key] = query[key]
-      } else if (query[key] === 'true' || query[key] === 'false') {
-        where[key] = query[key] === 'true'
+        where[key] = search[key]
+      } else if (key.includes('-')) {
+        const fields = key.split('-')
+
+        where.OR = fields.map(f => ({ [f]: { contains: search[key] } }))
+
+      } else if (search[key] === 'true' || search[key] === 'false') {
+        where[key] = search[key] === 'true'
       } else if (key === 'start_date') {
-        if (where['created_date']) where['created_date'] = { ...where['created_date'], gte: query[key] }
-        else where['created_date'] = { gte: query[key] }
+        if (where['created_date']) where['created_date'] = { ...where['created_date'], gte: search[key] }
+        else where['created_date'] = { gte: search[key] }
       } else if (key === 'end_date') {
-        if (where['created_date']) where['created_date'] = { ...where['created_date'], lte: query[key] }
-        else where['created_date'] = { lte: query[key] }
+        if (where['created_date']) where['created_date'] = { ...where['created_date'], lte: search[key] }
+        else where['created_date'] = { lte: search[key] }
       } else if (key === 'month_date') {
-        where['created_date'] = queryMonth(query[key])
+        where['created_date'] = queryMonth(search[key])
       } else {
-        where[key] = { contains: query[key] }
+        where[key] = { contains: search[key] }
       }
     })
     
@@ -93,19 +105,19 @@ export class ServiceFactory {
         where,
         take: limit,
         skip,
-        orderBy: sort,
+        orderBy,
         include,
       }) : select ? delegate.findMany({
         where,
         take: limit,
         skip,
-        orderBy: sort,
+        orderBy,
         select,
       }) : delegate.findMany({
         where,
         take: limit,
         skip,
-        orderBy: sort,
+        orderBy,
       })]
     ])
     return { total, data }

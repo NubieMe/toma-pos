@@ -1,29 +1,48 @@
 "use client"
 
 import DataTable from "@/components/table/data-table"
-import { TableColumn } from "@/types/column"
-import React from "react"
-import useMenuStore from "@/store/menu"
-import MenuModal from "./modal"
 import AlertDialog from "@/components/ui/alert"
-import { toast } from "@/hooks/use-toast"
-import { Menu } from "@/types/menu"
+import { useAuth } from "@/context/auth-context"
 import { usePermission } from "@/hooks/use-permission"
-import { ActionTable } from "@/types/action"
+import { TableColumn } from "@/types/column"
+import { Menu } from "@/types/menu"
 import { convertAction } from "@/utils/helper"
-import { Button, Icon, IconButton, InputAdornment, TextField } from "@mui/material"
+import { Button } from "@mui/material"
+import React from "react"
+import useMenu from "./hooks"
+import MenuModal from "./modal"
+import Search from "@/components/table/search"
+import Refresh from "@/components/ui/refresh"
 
 export default function Page() {
   const { permission } = usePermission()
-  const [open, setOpen] = React.useState(false)
-  const [openDelete, setOpenDelete] = React.useState(false)
-  const [mode, setMode] = React.useState<'add' | 'edit' | 'view'>('view')
-  const [data, setData] = React.useState<Menu | null>(null)
-  const [loading, setLoading] = React.useState(false)
-  const { menus, setMenus, deleteMenu } = useMenuStore()
-  const [action, setAction] = React.useState<ActionTable[]>([])
-  const [search, setSearch] = React.useState('')
-  const [filtered, setFiltered] = React.useState<Menu[]>(menus || [])
+  const { user } = useAuth()
+  const {
+    menus,
+    loading,
+    setAction,
+    action,
+    open,
+    setOpen,
+    openDelete,
+    setOpenDelete,
+    mode,
+    data,
+    setData,
+    search,
+    setSearch,
+    handleClick,
+    handleDelete,
+    fetchMenus,
+    page,
+    setPage,
+    rowsPerPage,
+    setRowsPerPage,
+    order,
+    setOrder,
+    orderBy,
+    setOrderBy,
+  } = useMenu()
 
   const columns: TableColumn<Menu>[] = [
     { key: 'name', label: 'Name' },
@@ -33,89 +52,37 @@ export default function Page() {
     { key: 'is_active', label: 'Status', render: (val) => <span>{val ? 'Active': 'Inactive'}</span>}
   ]
   
-  const handleClick = (body: Menu | null = null, modes: 'add' | 'edit' | 'view' | 'delete' = 'view') => {
-    setData(body)
-    if (modes === 'delete') {
-      setOpenDelete(true)
-    } else {
-      setOpen(true)
-      setMode(modes)
-    }
-  }
-
-  const handleDelete = async () => {
-    try {
-      const res = await fetch(`/api/menu/${data?.id}`, {
-        method: 'DELETE',
-      })
-      
-      const result = (await res.json()).message
-
-      toast({ description: result, duration: 5000 })
-      deleteMenu(data!.id)
-      setData(null)
-    } catch (error) {
-      toast({ description: (error as Error).message, variant: 'warning', duration: 5000 })
-    } finally {
-      setOpenDelete(false)
-    }
-  }
-  
-  const handleSearch = (value: string) => {
-    const filter = menus.filter(menu => `${menu.name} ${menu.path} ${menu.icon}`.toLowerCase().includes(value.toLowerCase()))
-    setFiltered(filter)
-  }
-  
   React.useEffect(() => {
-    const fetchMenus = async () => {
-      setLoading(true)
-      try {
-        const res = await fetch('/api/menu')
-        const dat = (await res.json()).data
-        setMenus(dat)
-        setFiltered(dat)
-      } catch (err) {
-        console.error('Error loading menus', err)
-      } finally {
-        setLoading(false)
-      }
-    }
-
     fetchMenus()
-    setAction(convertAction(permission!))
-  }, [])
-
+  }, [search, page, rowsPerPage, order, orderBy])
+  
   React.useEffect(() => {
-    handleSearch(search)
-  }, [search])
+    if (permission) setAction(convertAction(permission))
+  }, [user])
 
   return (
     <>
       <DataTable
         loading={loading}
         columns={columns}
-        rows={filtered}
+        rows={menus}
         title="Menu Configuration"
         rowIdKey="id"
         getRowActions={() => action}
         actions={
           <div className="flex items-center gap-20">
-            <TextField
-              className='w-full'
-              placeholder="Search..."
-              slotProps={{
-                input: {
-                  endAdornment: (
-                    <InputAdornment position="end" disablePointerEvents={search ? false : true}>
-                      <IconButton onClick={() => setSearch('')}>
-                        <Icon>{search ? 'close' : 'search'}</Icon>
-                      </IconButton>
-                    </InputAdornment>
-                  )
-                }
-              }}
+            <Search
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              setValue={setSearch}
+            />
+            <Refresh
+              onClick={() => {
+                setSearch('')
+                setPage(0)
+                setOrderBy('created_date')
+                setOrder('desc')
+                fetchMenus()
+              }}
             />
             {permission?.create && 
               <Button onClick={() => handleClick(null, 'add')}>
@@ -131,9 +98,23 @@ export default function Page() {
           } else {
             handleClick(row, action)
           }
-        }
-      }/>
-      <AlertDialog title="Delete Menu" description="Are you sure you want to delete this menu?" onConfirm={() => handleDelete()} open={openDelete} setOpen={setOpenDelete} />
+        }}
+        order={order}
+        setOrder={setOrder}
+        orderBy={orderBy}
+        setOrderBy={setOrderBy}
+        page={page}
+        setPage={setPage}
+        rowsPerPage={rowsPerPage}
+        setRowsPerPage={setRowsPerPage}
+      />
+      <AlertDialog
+        title="Delete Menu"
+        description="Are you sure you want to delete this menu?"
+        onConfirm={() => handleDelete()}
+        open={openDelete}
+        setOpen={setOpenDelete}
+      />
       <MenuModal open={open} mode={mode} onClose={() => setOpen(false)} initialData={data!} menu={menus} />
     </>
   )

@@ -1,38 +1,26 @@
 import { prisma } from "@/lib/prisma"
-import { MenuBody } from "@/types/menu"
 
 export const getSidebarMenu = async () => {
-    return await prisma.menu.findMany({ 
-        where: { parent_id: null },
-        include: { 
+  const [data, total] = await Promise.all([
+    prisma.menu.findMany({ 
+      where: { parent_id: null, is_active: true, deleted_date: null },
+      include: { 
+        permissions: true,
+        children: {
+          include: {
             permissions: true,
             children: {
-                include: {
-                    permissions: true,
-                    children: {
-                        include: {
-                            permissions: true,
-                            children: true
-                        }
-                    }
-                }
+              include: {
+                permissions: true,
+                children: true
+              }
             }
-        } 
-    })
-}
-
-export const getAllMenu = async () => {
-    return await prisma.menu.findMany({ 
-        include: { 
-            permissions: true,
-            parent: true,
-        },
-        orderBy: {
-            id: 'desc'
+          }
         }
-    })
-}
+      }
+    }),
+    prisma.menu.count({ where: { parent_id: null } }),
+  ])
 
-export const insertMenu = async (data: MenuBody) => {
-    return await prisma.menu.create({ data, include: { children: true, permissions: true } })
+  return { data, total }
 }

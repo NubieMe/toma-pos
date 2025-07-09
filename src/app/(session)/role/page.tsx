@@ -1,27 +1,46 @@
 "use client"
 import React from 'react'
-import useRoleStore from '@/store/role'
 import DataTable from '@/components/table/data-table'
 import { TableColumn } from '@/types/column'
 import { Role } from '@prisma/client'
 import { format } from 'date-fns'
 import RoleModal from './modal'
 import AlertDialog from '@/components/ui/alert'
-import { toast } from '@/hooks/use-toast'
 import { usePermission } from '@/hooks/use-permission'
-import { ActionTable } from '@/types/action'
 import { convertAction } from '@/utils/helper'
 import { Button } from '@mui/material'
+import useRole from './hooks'
+import { useAuth } from '@/context/auth-context'
+import Search from '@/components/table/search'
 
 export default function Page() {
   const { permission } = usePermission()
-  const { roles, setRoles, deleteRole } = useRoleStore()
-  const [open, setOpen] = React.useState(false)
-  const [openDelete, setOpenDelete] = React.useState(false)
-  const [loading, setLoading] = React.useState(false)
-  const [mode, setMode] = React.useState<'add' | 'edit' | 'view'>('view')
-  const [data, setData] = React.useState<Role | null>(null)
-  const [action, setAction] = React.useState<ActionTable[]>([])
+  const { user } = useAuth()
+  const {
+    open,
+    setOpen,
+    openDelete,
+    setOpenDelete,
+    mode,
+    data,
+    action,
+    setAction,
+    loading,
+    page,
+    setPage,
+    rowsPerPage,
+    setRowsPerPage,
+    order,  
+    setOrder,
+    orderBy,
+    setOrderBy,
+    search,
+    setSearch,
+    roles,
+    fetchRoles,
+    handleClick,
+    handleDelete,
+  } = useRole()
 
   const columns: TableColumn<Role>[] = [
     { key: 'name', label: 'Name' },
@@ -30,49 +49,12 @@ export default function Page() {
   ]
 
   React.useEffect(() => {
-    const fetchRoles = async () => {
-      setLoading(true)
-      try {
-        const res = await fetch('/api/role')
-        const dat = (await res.json()).data
-        setRoles(dat)
-      } catch (err) {
-        console.error('Error loading roles', err)
-      } finally {
-        setLoading(false)
-      }
-    }
+    if (permission) setAction(convertAction(permission!))
+  }, [user])
 
+  React.useEffect(() => {
     fetchRoles()
-    setAction(convertAction(permission!))
-  }, [])
-
-  const handleClick = (body: Role | null, mode: 'add' | 'edit' | 'view' | 'delete' = 'view') => {
-    setData(body)
-    if (mode === 'delete') {
-      setOpenDelete(true)
-    } else {
-      setOpen(true)
-      setMode(mode)
-    }
-  }
-
-  const handleDelete = async () => {
-    const duration = 5000
-    try {
-      const res = await fetch(`/api/role/${data?.id}`, {
-        method: 'DELETE',
-      })
-      const result = (await res.json()).message
-
-      deleteRole(data!.id)
-      toast({ description: result, duration })
-    } catch (error) {
-      toast({ description: (error as Error).message, variant: 'warning', duration })
-    } finally {
-      setOpenDelete(false)
-    }
-  }
+  }, [page, rowsPerPage, order, orderBy, search])
 
   return (
     <>
@@ -87,10 +69,26 @@ export default function Page() {
           handleClick(row, action)
         }}
         actions={
-          (permission?.create && <Button onClick={() => handleClick(null, 'add')}>
-            New
-          </Button>)
+          <div className="flex items-center gap-20">
+            <Search
+              value={search}
+              setValue={setSearch}
+            />
+            {permission?.create && 
+              <Button onClick={() => handleClick(null, 'add')}>
+                New
+              </Button>
+            }
+          </div>
         }
+        page={page}
+        setPage={setPage}
+        rowsPerPage={rowsPerPage}
+        setRowsPerPage={setRowsPerPage}
+        order={order}
+        setOrder={setOrder}
+        orderBy={orderBy}
+        setOrderBy={setOrderBy}
       />
       <RoleModal
         mode={mode}

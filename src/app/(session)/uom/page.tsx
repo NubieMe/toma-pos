@@ -2,27 +2,46 @@
 
 import React from 'react'
 import DataTable from '@/components/table/data-table'
-import useUomStore from '@/store/uom'
 import { TableColumn } from '@/types/column'
 import { Uom } from '@prisma/client'
 import { format } from 'date-fns'
-import { toast } from '@/hooks/use-toast'
 import UomModal from './modal'
 import AlertDialog from '@/components/ui/alert'
 import { usePermission } from '@/hooks/use-permission'
-import { ActionTable } from '@/types/action'
 import { convertAction } from '@/utils/helper'
 import { Button } from '@mui/material'
+import { useAuth } from '@/context/auth-context'
+import useUom from './hooks'
+import Search from '@/components/table/search'
 
 export default function Page() {
   const { permission } = usePermission()
-  const { uoms, setUoms, deleteUom } = useUomStore()
-  const [open, setOpen] = React.useState(false)
-  const [openDelete, setOpenDelete] = React.useState(false)
-  const [mode, setMode] = React.useState<'add' | 'edit' | 'view'>('view')
-  const [data, setData] = React.useState<Uom | null>(null)
-  const [loading, setLoading] = React.useState(false)
-  const [action, setAction] = React.useState<ActionTable[]>([])
+  const { user }  = useAuth()
+  const {
+    uoms,
+    loading,
+    setAction,
+    action,
+    open,
+    setOpen,
+    openDelete,
+    setOpenDelete,
+    mode,
+    data,
+    search,
+    setSearch,
+    fetchUoms,
+    page,
+    setPage,
+    rowsPerPage,
+    setRowsPerPage,
+    order,
+    setOrder,
+    orderBy,
+    setOrderBy,
+    handleDelete,
+    handleClick,
+  } = useUom()
 
   const columns: TableColumn<Uom>[] = [
     { key: 'name', label: 'Name' },
@@ -30,54 +49,18 @@ export default function Page() {
     { key: 'created_date', label: 'Created Date', render: (value) => format(value!, 'd MMMM y')},
   ]
 
-  const handleClick = (body: Uom | null, mode: 'add' | 'edit' | 'view' | 'delete' = 'view') => {
-    setData(body)
-    if (mode === 'delete') {
-      setOpenDelete(true)
-    } else {
-      setOpen(true)
-      setMode(mode)
-    }
-  }
-
-  const handleDelete = async () => {
-    const duration = 5000
-    try {
-      const res = await fetch(`/api/uom/${data?.id}`, {
-        method: 'DELETE',
-      })
-      const result = (await res.json()).message
-      toast({ description: result, duration })
-      deleteUom(data!.id)
-    } catch (error) {
-      toast({ description: (error as Error).message, duration })
-    } finally {
-      setOpenDelete(false)
-    }
-  }
+  React.useEffect(() => {
+    fetchUoms()
+  }, [page, rowsPerPage, order, orderBy, search])
 
   React.useEffect(() => {
-    const fetchUoms = async () => {
-      setLoading(true)
-      try {
-        const res = await fetch('/api/uom')
-        const dat = (await res.json()).data
-        setUoms(dat)
-      } catch (err) {
-        console.error('Error loading uoms', err)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchUoms()
-    setAction(convertAction(permission!))
-  }, [])
+    if (permission) setAction(convertAction(permission!))
+  }, [user])
 
   return (
     <>
       <DataTable
-        title='UOM'
+        title='Unit of Measurement'
         loading={loading}
         columns={columns}
         rows={uoms}
@@ -87,10 +70,24 @@ export default function Page() {
           handleClick(row, action)
         }}
         actions={
-          (permission?.create && <Button onClick={() => handleClick(null, 'add')}>
-            New
-          </Button>)
+          <div className="flex items-center gap-20">
+            <Search
+              value={search}
+              setValue={setSearch}
+              />
+            {permission?.create && <Button onClick={() => handleClick(null, 'add')}>
+              New
+            </Button>}
+          </div>
         }
+        page={page}
+        setPage={setPage}
+        rowsPerPage={rowsPerPage}
+        setRowsPerPage={setRowsPerPage}
+        order={order}
+        setOrder={setOrder}
+        orderBy={orderBy}
+        setOrderBy={setOrderBy}
       />
       <UomModal
         mode={mode}
