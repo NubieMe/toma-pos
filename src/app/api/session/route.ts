@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getUserSessionFromRequest } from '@/lib/session'
 
 export async function GET(req: NextRequest) {
-  const data = getUserSessionFromRequest(req)
+  const data = JSON.parse(req.headers.get('x-user-payload')!)
 
   if (!data) {
     return NextResponse.json({ data: null })

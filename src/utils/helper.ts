@@ -44,6 +44,7 @@ export const filter = (data: any, keys: string[]) => {
 };
 
 export const errorHandler = (error: ResponseError) => {
+    console.error(error)
     return NextResponse.json({ message: error.message || "Internal Server Error" }, { status: error.status || 500 });
 }
 

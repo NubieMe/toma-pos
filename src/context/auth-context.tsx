@@ -4,7 +4,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { Session } from '@/types/session'
-import { SESSION_NAME } from '@/lib/session'
 
 interface AuthContextType {
   user: Session | null
@@ -37,8 +36,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [router, user])
 
   const logout = () => {
-    // Hapus cookie (trigger logout server-side juga bisa)
-    document.cookie = `${SESSION_NAME}=; Max-Age=0; path=/`
     setUser(null)
     router.push('/login')
   }

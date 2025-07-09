@@ -119,17 +119,19 @@ const Sidebar = () => {
       <Drawer
         variant="permanent"
         open={open}
-        PaperProps={{
-          sx: {
-            position: 'relative',
-            width: open ? drawerWidth : collapsedWidth,
-            overflowX: 'hidden',
-            transition: theme.transitions.create('width', {
-              easing: theme.transitions.easing.sharp,
-              duration: theme.transitions.duration.enteringScreen,
-            }),
-            whiteSpace: 'nowrap',
-          },
+        slotProps={{
+          paper: {
+            sx: {
+              position: 'relative',
+              width: open ? drawerWidth : collapsedWidth,
+              overflowX: 'hidden',
+              transition: theme.transitions.create('width', {
+                easing: theme.transitions.easing.sharp,
+                duration: theme.transitions.duration.enteringScreen,
+              }),
+              whiteSpace: 'nowrap',
+            },
+          }
         }}
       >
         <Toolbar

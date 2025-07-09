@@ -9,6 +9,7 @@ export default function Page() {
 
   React.useEffect(() => {
     if (!company) fetchCompany()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return (
@@ -68,7 +69,8 @@ export default function Page() {
             <TextField
               {...register('address')}
               label="Address"
-              maxRows={Infinity}
+              multiline
+              minRows={3}
               disabled={loading}
               error={!!errors.address}
               helperText={errors.address?.message}

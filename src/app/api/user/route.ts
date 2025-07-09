@@ -5,10 +5,10 @@ import { hash } from 'bcryptjs'
 import { errorHandler } from '@/utils/helper'
 import { ResponseError } from '@/lib/error/response-error'
 import { ServiceFactory } from '@/services/service-factory'
-import { getUserSessionFromRequest } from '@/lib/session'
+import { Session } from '@/types/session'
 
 export async function POST(req: NextRequest) {
-  const currentUser = getUserSessionFromRequest(req)
+  const currentUser = JSON.parse(req.headers.get('x-user-payload')!) as Session
 
   if (!currentUser || !['administrator', 'root'].includes(currentUser.role.name!)) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })

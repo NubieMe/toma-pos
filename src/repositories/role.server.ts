@@ -18,12 +18,12 @@ export const getRoleById = async (id: string) => {
     });
 }
 
-export const getAllRoles = async (where: Prisma.RoleWhereInput) => {
+export const getAllRoles = async (where: Prisma.RoleWhereInput, take: number, skip: number, orderBy: Prisma.RoleOrderByWithRelationInput) => {
     return await prisma.role.findMany({
         where,
-        orderBy: {
-            id: "desc",
-        },
+        take,
+        skip,
+        orderBy,
     });
 }
 
@@ -50,6 +50,8 @@ export const deleteRole = async (id: string) => {
     });
 }
 
-export const countRole = async (where: Prisma.RoleCountArgs) => {
-    return await prisma.role.count(where);
+export const countRole = async (where: Prisma.RoleWhereInput) => {
+    return await prisma.role.count({
+        where
+    });
 }

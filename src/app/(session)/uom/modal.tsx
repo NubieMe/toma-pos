@@ -96,8 +96,8 @@ export default function UomModal({
             defaultValue={defaultValues!.description}
             error={!!errors.description}
             multiline
-            minRows={2}
-            />
+            minRows={3}
+          />
         </Stack>
       </form>
     </EntityModal>

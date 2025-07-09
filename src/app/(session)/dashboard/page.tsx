@@ -1,10 +1,11 @@
 // app/dashboard/page.tsx
-import { getUserSession } from '@/lib/session.server'
+
+import { getUserSession } from "@/utils/session"
 
 export default async function DashboardPage() {
   const user = await getUserSession()
   
-  if (!user) return null // Biarkan redirect jalan
+  if (!user) return null
 
   return (
     <div className="p-6">
