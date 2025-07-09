@@ -2,11 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { ServiceFactory } from "@/services/service-factory";
 import { ResponseError } from "@/lib/error/response-error";
 import { errorHandler } from "@/utils/helper";
+import { Session } from "@/types/session";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const data = await ServiceFactory.create('uom', body)
+    const user = JSON.parse(req.headers.get('x-user-payload')!) as Session
+    const data = await ServiceFactory.create('uom', body, user.id)
 
     return NextResponse.json({
       message: "UOM created successfully",
