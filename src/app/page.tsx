@@ -1,21 +1,12 @@
 import { Card, CardContent, Typography, Grid, Box } from '@mui/material'
 import { Home, Person, Group } from '@mui/icons-material'
 import { Metadata } from 'next'
-import { redirect } from 'next/navigation'
-import { getUserSession } from '@/lib/session.server'
 
 export const metadata: Metadata = {
   title: 'Toma POS',
 }
 
 export default async function DashboardPage() {
-  const session = await getUserSession()
-
-  if (!session) {
-    redirect('/login')
-  } else {
-    redirect('/dashboard')
-  }
 
   const stats = [
     { icon: <Person fontSize="large" color="primary" />, label: 'Users', value: 32 },
