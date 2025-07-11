@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client"
 
 import DataTable from "@/components/table/data-table"
@@ -7,12 +8,11 @@ import { usePermission } from "@/hooks/use-permission"
 import { TableColumn } from "@/types/column"
 import { Menu } from "@/types/menu"
 import { convertAction } from "@/utils/helper"
-import { Button } from "@mui/material"
+import { Button, Icon, IconButton, Tooltip } from "@mui/material"
 import React from "react"
 import useMenu from "./hooks"
 import MenuModal from "./modal"
 import Search from "@/components/table/search"
-import Refresh from "@/components/ui/refresh"
 
 export default function Page() {
   const { permission } = usePermission()
@@ -55,7 +55,7 @@ export default function Page() {
   React.useEffect(() => {
     fetchMenus()
   }, [search, page, rowsPerPage, order, orderBy])
-  
+
   React.useEffect(() => {
     if (permission) setAction(convertAction(permission))
   }, [user])
@@ -75,20 +75,26 @@ export default function Page() {
               value={search}
               setValue={setSearch}
             />
-            <Refresh
-              onClick={() => {
-                setSearch('')
-                setPage(0)
-                setOrderBy('created_date')
-                setOrder('desc')
-                fetchMenus()
-              }}
-            />
-            {permission?.create && 
-              <Button onClick={() => handleClick(null, 'add')}>
-                New
-              </Button>
-            }
+            <div className="flex gap-2">
+              <Tooltip title="Refresh">
+                <IconButton
+                  onClick={() => {
+                    setSearch('')
+                    setPage(0)
+                    setOrderBy('created_date')
+                    setOrder('desc')
+                    fetchMenus()
+                  }}
+                >
+                  <Icon>refresh</Icon>
+                </IconButton>
+              </Tooltip>
+              {permission?.create && 
+                <Button onClick={() => handleClick(null, 'add')}>
+                  New
+                </Button>
+              }
+            </div>
           </div>
         }
         onActionClick={(action, row) => {
