@@ -2,6 +2,7 @@ import { Uom } from '@prisma/client'
 import EntityModal from '@/components/modal'
 import { useForm } from 'react-hook-form'
 import {
+  AlertColor,
   Stack,
   TextField,
 } from '@mui/material'
@@ -50,13 +51,17 @@ export default function UomModal({
         method: mode === 'add' ? 'POST' : 'PATCH',
         body: JSON.stringify(body),
       })
-      const data = (await res.json())
+      const parsed = (await res.json())
   
-      if (data) {
-        if (mode === 'add') addUom(data.data)
-        else editUom(data.data)
+      let variant: AlertColor = 'warning'
+      if (parsed.data) {
+        if (mode === 'add') addUom(parsed.data)
+        else editUom(parsed.data)
+
+        variant = 'success'
       }
-      toast({ description: data.message })
+
+      toast({ description: parsed.message, variant })
     } catch (error) {
       toast({
         description: (error as Error).message,

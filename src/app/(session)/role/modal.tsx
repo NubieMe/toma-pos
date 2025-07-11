@@ -51,16 +51,16 @@ export default function RoleModal({
         method: mode === 'add' ? 'POST' : 'PATCH',
         body: JSON.stringify(body),
       })
-      const data = (await res.json())
+      const parsed = (await res.json())
 
       let variant: AlertColor = 'warning'
-      if (data.ok) {
-        if (mode === 'add') addRole(data.data)
-        else editRole(data.data)
+      if (parsed) {
+        if (mode === 'add') addRole(parsed.data)
+        else editRole(parsed.data)
 
         variant = 'success'
       }
-      toast({ description: data.message, variant })
+      toast({ description: parsed.message, variant })
     } catch (error) {
       toast({
         description: (error as Error).message,
