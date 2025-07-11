@@ -14,24 +14,29 @@ export async function GET(req: NextRequest) {
   try {
     const params = req.nextUrl.searchParams
     const sidebar = params.get('sidebar') === 'true'
+    const permission = params.get('permission') === 'true'
     const user = JSON.parse(req.headers.get('x-user-payload')!) as Session
   
     const include: Prisma.MenuInclude = {
       parent: true,
+      permissions: true,
     }
 
     // eslint-disable-next-line prefer-const
-    let { data, total } = (sidebar ? await getSidebarMenu() : await ServiceFactory.getAll('menu', params, include))
+    let { data, total } = (sidebar || permission ? await getSidebarMenu() : await ServiceFactory.getAll('menu', params, include))
 
     const availMenu: string[] = [];
-    if (sidebar) {
+    if (sidebar || permission) {
       data = data.filter((menu: Menu) => {
-        if (menu.permissions?.some(p => p.role_id === user?.role.id)) {
-          const subMenu = menu.children?.filter((subMenu: Menu) => {
-            if (subMenu.permissions?.some(p => p.role_id === user?.role.id)) {
-                
-              const grandSubMenu = subMenu.children?.filter((grandSubMenu: Menu) => {  
-                if (grandSubMenu.permissions?.some(p => p.role_id === user?.role.id)) {
+        if (menu.permissions?.some(p => (sidebar ? p.role_id === user?.role.id : true) && menu.is_active && menu.deleted_date === null)) {
+          menu.children = menu.children?.filter((subMenu: Menu) => {
+            if (subMenu.permissions?.some(p => (sidebar ? p.role_id === user?.role.id: true) && subMenu.is_active && subMenu.deleted_date === null)) {
+              const subLower = subMenu.name.toLowerCase()
+
+              if (permission && subLower.includes('menu') && subLower.includes('config')) return false
+              
+              subMenu.children = subMenu.children?.filter((grandSubMenu: Menu) => {  
+                if (grandSubMenu.permissions?.some(p => (sidebar ? p.role_id === user?.role.id : true) && grandSubMenu.is_active && grandSubMenu.deleted_date === null)) {
 
                   if (grandSubMenu.path) availMenu.push(grandSubMenu.path)
                   return grandSubMenu
@@ -39,12 +44,12 @@ export async function GET(req: NextRequest) {
               })
 
               if (subMenu.path) availMenu.push(subMenu.path)
-              return grandSubMenu
+              return true
             }
           })
           
           if (menu.path) availMenu.push(menu.path)
-          return subMenu
+          return true
         }
       })
     }
