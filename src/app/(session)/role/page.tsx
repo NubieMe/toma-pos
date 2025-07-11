@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client"
 import React from 'react'
 import DataTable from '@/components/table/data-table'
