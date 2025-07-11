@@ -27,6 +27,7 @@ export type Menu = {
   is_active: boolean
   created_date: Date
   updated_date?: Date
+  deleted_date: Date | null
 }
 
 export type MenuBody = {
