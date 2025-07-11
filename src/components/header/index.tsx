@@ -1,23 +1,18 @@
-// /components/header/index.tsx
 'use client';
 
 import React, { useState } from 'react';
-
-// Material-UI Components
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
-// import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
-
-// Material-UI Icons
 import AccountCircle from '@mui/icons-material/AccountCircle';
 import ThemeToggleButton from '../ui/toggle';
+import ProfileCard from './profile-card';
+import { useAuth } from '@/context/auth-context';
 
-// Pastikan baris ini tetap 'export default'
 export default function Header() {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const { logout } = useAuth()
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -27,22 +22,22 @@ export default function Header() {
     setAnchorEl(null);
   };
 
-  const handleLogout = () => {
-    console.log('Logging out...');
-    handleClose();
-  };
+  const handleLogout = async () => {
+    await fetch('/api/logout', {
+      method: 'POST',
+    })
 
+    logout()
+  }
   return (
     <AppBar
       position="static"
       elevation={1}
-      className="bg-white dark:bg-gray-800 text-slate-900 dark:text-white"
+      // FIX: Menggunakan sx prop agar warna header otomatis mengikuti light/dark mode
+      sx={{ bgcolor: 'background.paper', color: 'text.primary' }}
     >
       <Toolbar>
-        {/* <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-          Role Management
-        </Typography> */}
-        <div className="flex-grow"></div>
+        <div className="flex-grow" />
 
         <ThemeToggleButton />
 
@@ -56,20 +51,13 @@ export default function Header() {
           </IconButton>
           <Menu
             anchorEl={anchorEl}
-            anchorOrigin={{
-              vertical: 'top',
-              horizontal: 'right',
-            }}
-            keepMounted
-            transformOrigin={{
-              vertical: 'top',
-              horizontal: 'right',
-            }}
             open={Boolean(anchorEl)}
             onClose={handleClose}
+            transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+            anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+            MenuListProps={{ sx: { padding: 0 } }} 
           >
-            <MenuItem onClick={handleClose}>Edit Profile</MenuItem>
-            <MenuItem onClick={handleLogout}>Logout</MenuItem>
+            <ProfileCard onClose={handleClose} onLogout={handleLogout} />
           </Menu>
         </div>
       </Toolbar>

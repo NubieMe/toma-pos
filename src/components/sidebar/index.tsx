@@ -10,8 +10,6 @@ import {
   Toolbar,
   Divider,
   Icon,
-  ListItem,
-  ListItemIcon,
 } from '@mui/material'
 import { Menu } from '@/types/menu'
 import NavRenderer, { isChildActive } from './nav-renderer'
@@ -42,14 +40,6 @@ const Sidebar = () => {
   const handleToggle = (id: string) => {
     setOpenMenu(prev => (prev === id ? null : id))
   }
-
-  const handleLogout = async () => {
-    await fetch('/api/logout', {
-      method: 'POST',
-    })
-
-    auth.logout()
-  }
   
   React.useEffect(() => {
     const fetchMenus = async () => {
@@ -67,6 +57,7 @@ const Sidebar = () => {
     }
 
     if (sidebar.length === 0 || !sidebar) fetchMenus()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sidebar.length, sidebar, loading, auth.user])
 
   React.useEffect(() => {
@@ -74,7 +65,6 @@ const Sidebar = () => {
   }, [isMobile])
 
   React.useEffect(() => {
-    // Auto open parent menu kalau ada anak yang aktif
     const findActiveParent = (menus: Menu[]): string | null => {
       for (const menu of menus) {
         if (menu.children?.length) {
@@ -97,12 +87,12 @@ const Sidebar = () => {
       for (const menu of menus) {
         const fullPath = `/${menu.path || ''}`
         if (menu.children?.length) {
-          // Rekursif ke anak-anak
+
           const found = findOpenParent(menu.children, currentPath)
-          if (found) return menu.id // jika salah satu anak aktif, kembalikan ID parent
+          if (found) return menu.id
         } else {
           if (fullPath === currentPath) {
-            return null // jangan return child id, biar kita cuma buka parent
+            return null
           }
         }
       }
@@ -158,36 +148,6 @@ const Sidebar = () => {
           {!loading &&
             <NavRenderer menus={sidebar as Menu[]} isActive={isActive} openMenu={openMenu} onToggle={handleToggle} sidebarOpen={open} setActiveMenu={setActiveMenu} />}
         </List>
-        <Divider />
-        <Toolbar>
-          <List>
-            <Link href='' onClick={handleLogout}>
-              <ListItem
-                sx={{
-                  pl: open ? 2 : 0,
-                  justifyContent: open ? 'flex-start' : 'center',
-                }}
-              >
-                <ListItemIcon
-                  sx={{
-                    minWidth: 0,
-                    justifyContent: 'center',
-                    color: 'text.secondary',
-                  }}
-                >
-                  <Icon>logout</Icon>
-                </ListItemIcon>
-                {open && (
-                  <ListItemText
-                    primary="Logout"
-                    sx={{ ml: 1 }}
-                    primaryTypographyProps={{ fontSize: 14, fontWeight: 'bold' }}
-                  />
-                )}
-              </ListItem>
-            </Link>
-          </List>
-        </Toolbar>
       </Drawer>
     </>
   )
