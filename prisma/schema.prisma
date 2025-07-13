@@ -13,29 +13,33 @@ datasource db {
 model Sequence {
   id           String    @id @default(uuid())
   menu         String
-  number       Int?
+  number       Int       @default(0)
   month        Int?
-  year         Int?
+  year         Int
   created_date DateTime  @default(now())
   updated_date DateTime? @updatedAt
+
+  @@map("sequences")
 }
 
 model User {
-  id           String       @id @default(uuid())
-  username     String       @unique
+  id           String    @id @default(uuid())
+  username     String    @unique
   password     String
-  token        String?      @unique
   role_id      String?
-  role         Role?        @relation(fields: [role_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
-  profile_id   String?      @unique
-  profile      Profile?     @relation(fields: [profile_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
-  attendance   Attendance[]
-  created_date DateTime     @default(now())
-  updated_date DateTime?    @updatedAt
+  profile_id   String?   @unique
+  created_date DateTime  @default(now())
+  updated_date DateTime? @updatedAt
   created_by   String?
   updated_by   String?
   deleted_date DateTime?
   deleted_by   String?
+
+  role       Role?        @relation(fields: [role_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  profile    Profile?     @relation(fields: [profile_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  attendance Attendance[]
+
+  @@map("users")
 }
 
 model Profile {
@@ -45,27 +49,33 @@ model Profile {
   picture      String?
   birthdate    DateTime
   religion     String?
-  user         User?
   created_date DateTime  @default(now())
   updated_date DateTime? @updatedAt
   created_by   String?
   updated_by   String?
   deleted_date DateTime?
   deleted_by   String?
+
+  user User?
+
+  @@map("profiles")
 }
 
 model Role {
-  id           String       @id @default(uuid())
-  name         String       @unique
+  id           String    @id @default(uuid())
+  name         String    @unique
   description  String?
-  users        User[]
-  permissions  Permission[]
-  created_date DateTime     @default(now())
-  updated_date DateTime?    @updatedAt
+  created_date DateTime  @default(now())
+  updated_date DateTime? @updatedAt
   created_by   String?
   updated_by   String?
   deleted_date DateTime?
   deleted_by   String?
+
+  users       User[]
+  permissions Permission[]
+
+  @@map("roles")
 }
 
 model Menu {
@@ -87,6 +97,8 @@ model Menu {
   children Menu[] @relation("MultiMenu")
 
   permissions Permission[]
+
+  @@map("menus")
 }
 
 model Permission {
@@ -96,22 +108,27 @@ model Permission {
   read         Boolean   @default(false)
   update       Boolean   @default(false)
   delete       Boolean   @default(false)
-  role         Role      @relation(fields: [role_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
-  menu         Menu      @relation(fields: [menu_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
   created_date DateTime  @default(now())
   updated_date DateTime? @updatedAt
   created_by   String?
   updated_by   String?
 
+  role Role @relation(fields: [role_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  menu Menu @relation(fields: [menu_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+
   @@id([role_id, menu_id])
+  @@map("permissions")
 }
 
 model Attendance {
   id      String    @id @default(uuid())
   user_id String
-  user    User      @relation(fields: [user_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
   in      DateTime  @default(now())
   out     DateTime? @updatedAt
+
+  user User @relation(fields: [user_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+
+  @@map("attendances")
 }
 
 model Company {
@@ -121,8 +138,16 @@ model Company {
   phone        String?
   email        String?
   logo         String?
+  item_auto    Boolean   @default(false)
+  item_format  String?
+  user_auto    Boolean   @default(false)
+  user_format  String?
   created_date DateTime  @default(now())
   updated_date DateTime? @updatedAt
+  created_by   String?
+  updated_by   String?
+
+  @@map("companies")
 }
 
 model Branch {
@@ -131,26 +156,47 @@ model Branch {
   address      String?
   phone        String?
   coordinate   Json
-  stocks       Stock[]
   created_date DateTime  @default(now())
   updated_date DateTime? @updatedAt
   created_by   String?
   updated_by   String?
   deleted_date DateTime?
   deleted_by   String?
+
+  stocks Stock[]
+
+  @@map("branches")
 }
 
 model Uom {
   id           String    @id @default(uuid())
   name         String
   description  String?
-  items        Item[]
   created_date DateTime  @default(now())
   updated_date DateTime? @updatedAt
   created_by   String?
   updated_by   String?
   deleted_date DateTime?
   deleted_by   String?
+
+  items Item[]
+
+  @@map("uoms")
+}
+
+model Category {
+  id           String   @id @default(uuid())
+  code         String   @unique
+  name         String
+  description  String?
+  created_date DateTime @default(now())
+  updated_date DateTime @updatedAt
+  created_by   String?
+  updated_by   String?
+
+  Item Item[]
+
+  @@map("categories")
 }
 
 model Item {
@@ -159,34 +205,42 @@ model Item {
   name         String
   description  String?
   uom_id       String
-  uom          Uom       @relation(fields: [uom_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
-  stocks       Stock[]
+  category_id  String
   created_date DateTime  @default(now())
   updated_date DateTime? @updatedAt
   created_by   String?
   updated_by   String?
   deleted_date DateTime?
   deleted_by   String?
+
+  uom      Uom      @relation(fields: [uom_id], references: [id], onUpdate: NoAction, onDelete: Cascade)
+  category Category @relation(fields: [category_id], references: [id], onUpdate: NoAction, onDelete: Cascade)
+  stocks   Stock[]
+
+  @@map("items")
 }
 
 model Stock {
   id           String    @id @default(uuid())
   item_id      String
-  item         Item      @relation(fields: [item_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
   qty          Int
   vendible     Boolean
   branch_id    String
-  branch       Branch    @relation(fields: [branch_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
   price        Float     @default(0)
-  stock_io     StockIO[]
-  to           StockIO[] @relation("StockIOTo")
-  products     Product[]
   created_date DateTime  @default(now())
   updated_date DateTime? @updatedAt
   created_by   String?
   updated_by   String?
   deleted_date DateTime?
   deleted_by   String?
+
+  item     Item      @relation(fields: [item_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  branch   Branch    @relation(fields: [branch_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  stock_io StockIO[]
+  to       StockIO[] @relation("StockIOTo")
+  products Product[]
+
+  @@map("stocks")
 }
 
 enum StockType {
@@ -203,9 +257,7 @@ model StockIO {
   id           String    @id @default(uuid())
   type         StockType
   stock_id     String
-  stock        Stock     @relation(fields: [stock_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
   to_id        String?
-  to           Stock?    @relation("StockIOTo", fields: [to_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
   qty          Int
   price        Float
   note         String?
@@ -215,6 +267,11 @@ model StockIO {
   updated_by   String?
   deleted_date DateTime?
   deleted_by   String?
+
+  stock Stock  @relation(fields: [stock_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  to    Stock? @relation("StockIOTo", fields: [to_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+
+  @@map("stocks_io")
 }
 
 enum PaymentMethod {
@@ -227,32 +284,33 @@ enum PaymentMethod {
 }
 
 model Transaction {
-  id             String           @id @default(uuid())
+  id           String    @id @default(uuid())
+  net_price    Float
+  total_ppn    Float
+  subtotal     Float
+  total        Float
+  paid         Boolean   @default(false)
+  amount       Float?
+  date         DateTime?
+  note         String?
+  created_date DateTime  @default(now())
+  created_by   String
+  updated_date DateTime? @updatedAt
+  updated_by   String?
+  deleted_date DateTime?
+  deleted_by   String?
+
   products       Product[]
-  net_price      Float
-  total_ppn      Float
-  subtotal       Float
   charges        Charges_Detail[]
-  total          Float
-  paid           Boolean          @default(false)
-  amount         Float?
-  date           DateTime?
   payment_method PaymentMethod?
-  note           String?
-  created_date   DateTime         @default(now())
-  created_by     String
-  updated_date   DateTime?        @updatedAt
-  updated_by     String?
-  deleted_date   DateTime?
-  deleted_by     String?
+
+  @@map("transactions")
 }
 
 model Product {
-  id                  String      @id @default(uuid())
+  id                  String    @id @default(uuid())
   stock_id            String
-  stock               Stock       @relation(fields: [stock_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
   transaction_id      String
-  transaction         Transaction @relation(fields: [transaction_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
   price               Float
   qty                 Int
   discount_percent    Boolean
@@ -262,22 +320,30 @@ model Product {
   ppn_percentage      Float
   ppn_amount          Float
   subtotal            Float
-  created_date        DateTime    @default(now())
-  updated_date        DateTime?   @updatedAt
+  created_date        DateTime  @default(now())
+  updated_date        DateTime? @updatedAt
   created_by          String?
   updated_by          String?
   deleted_date        DateTime?
   deleted_by          String?
+
+  stock       Stock       @relation(fields: [stock_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  transaction Transaction @relation(fields: [transaction_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+
+  @@map("products")
 }
 
 model Charges_Detail {
-  id             String      @id @default(uuid())
+  id             String    @id @default(uuid())
   transaction_id String
-  transaction    Transaction @relation(fields: [transaction_id], references: [id])
   name           String
   percent        Boolean
   percentage     Float
   amount         Float
-  created_date   DateTime    @default(now())
-  updated_date   DateTime?   @updatedAt
+  created_date   DateTime  @default(now())
+  updated_date   DateTime? @updatedAt
+
+  transaction Transaction @relation(fields: [transaction_id], references: [id])
+
+  @@map("charges_details")
 }
