@@ -2,6 +2,8 @@ import { Menu } from "@/types/menu";
 import { Action, ActionTable } from "@/types/action";
 import { NextResponse } from "next/server";
 import { ResponseError } from "@/lib/error/response-error";
+import { Separator } from "@/constant/enum";
+import { Separator as SeparatorPrisma } from "@prisma/client";
 
 /**
  * Returns a query object for MongoDB that matches all dates in the given month (inclusive),
@@ -49,7 +51,6 @@ export const errorHandler = (error: ResponseError) => {
 }
 
 export function convertAction(action?: Action) {
-    console.log(action, 'act')
     const permissions: ActionTable[] = [];
 
     if (action?.read) {
@@ -73,4 +74,26 @@ export function flattenMenus(menus: Menu[]): Menu[] {
         }
         return [menu]
     })
+}
+
+export function convertSeparator(separator: Separator): SeparatorPrisma | null {
+    switch (separator) {
+        case '-':
+            return 'HYPHEN'
+        case '/':
+            return 'SLASH'
+        default:
+            return null
+    }
+}
+
+export function convertSeparatorBack(separator: SeparatorPrisma | null): Separator {
+    switch (separator) {
+        case "SLASH":
+            return '/'
+        case 'HYPHEN':
+            return '-'
+        default:
+            return null
+    }
 }
