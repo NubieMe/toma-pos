@@ -16,4 +16,21 @@ export const companySchema = z.object({
     item_auto: z.boolean(),
     item_format: z.string().optional(),
     item_separator: z.enum(separator).nullable(),
+}).refine(data => {
+  // Jika auto-generate kategori tidak aktif, lewati validasi ini
+  if (!data.category_auto) return true;
+
+  // Jika aktif, format harus diisi
+  if (!data.category_format) return false;
+  
+  const parts = data.category_format.split('-');
+  
+  // Dua bagian pertama wajib diisi
+  const part1_valid = parts[0] && parts[0].trim() !== '';
+  const part2_valid = parts[1] && parts[1].trim() !== '';
+
+  return part1_valid && part2_valid;
+}, {
+  message: "Dua format pertama untuk kategori wajib diisi.",
+  path: ["category_format"], 
 })
