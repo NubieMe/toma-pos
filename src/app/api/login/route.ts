@@ -1,24 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
 import { createSessionCookie } from '@/utils/session'
 import { compare } from 'bcryptjs'
 import { Session } from '@/types/session'
+import { getUserByUsername } from '@/repositories/users.server'
 
 export async function POST(req: NextRequest) {
   const { username, password } = await req.json()
 
-  const user = await prisma.user.findUnique({
-    where: { username },
-    include: { role: true },
-  })
-
+  const user = await getUserByUsername(username)
   if (!user || !user.password) {
-    return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 })
+    return NextResponse.json({ message: 'Username/Password tidak sesuai' }, { status: 401 })
   }
 
   const isValid = await compare(password, user.password)
   if (!isValid) {
-    return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 })
+    return NextResponse.json({ message: 'Username/Password tidak sesuai' }, { status: 401 })
   }
 
   const payload: Session = {
@@ -28,6 +24,9 @@ export async function POST(req: NextRequest) {
       id: user.role?.id,
       name: user.role?.name,
     },
+    profile: {
+      picture: user.profile?.picture || null
+    }
   }
 
   const res = NextResponse.json({ data: payload })
