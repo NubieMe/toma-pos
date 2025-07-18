@@ -12,10 +12,10 @@ datasource db {
 
 model Sequence {
   id           String    @id @default(uuid())
-  menu         String
+  name         String    @unique
   number       Int       @default(0)
   month        Int?
-  year         Int
+  year         Int?
   created_date DateTime  @default(now())
   updated_date DateTime? @updatedAt
 
@@ -131,21 +131,31 @@ model Attendance {
   @@map("attendances")
 }
 
+enum Separator {
+  HYPHEN @map("-")
+  SLASH  @map("/")
+}
+
 model Company {
-  id           String    @id @default(uuid())
-  name         String
-  address      String?
-  phone        String?
-  email        String?
-  logo         String?
-  item_auto    Boolean   @default(false)
-  item_format  String?
-  user_auto    Boolean   @default(false)
-  user_format  String?
-  created_date DateTime  @default(now())
-  updated_date DateTime? @updatedAt
-  created_by   String?
-  updated_by   String?
+  id                 String     @id @default(uuid())
+  name               String
+  address            String?
+  phone              String?
+  email              String?
+  logo               String?
+  item_auto          Boolean    @default(false)
+  item_format        String?
+  item_separator     Separator?
+  user_auto          Boolean    @default(false)
+  user_format        String?
+  user_separator     Separator?
+  category_auto      Boolean
+  category_format    String?
+  category_separator Separator?
+  created_date       DateTime   @default(now())
+  updated_date       DateTime?  @updatedAt
+  created_by         String?
+  updated_by         String?
 
   @@map("companies")
 }
@@ -185,14 +195,16 @@ model Uom {
 }
 
 model Category {
-  id           String   @id @default(uuid())
-  code         String   @unique
+  id           String    @id @default(uuid())
+  code         String    @unique
   name         String
   description  String?
-  created_date DateTime @default(now())
-  updated_date DateTime @updatedAt
+  created_date DateTime  @default(now())
+  updated_date DateTime  @updatedAt
   created_by   String?
   updated_by   String?
+  deleted_date DateTime?
+  deleted_by   String?
 
   Item Item[]
 
