@@ -13,12 +13,15 @@ export function useCompany() {
   const [loading, setLoading] = React.useState(false)
 
   const {
-    register,
-    watch,
+    control,
     reset,
     handleSubmit,
-    formState: { errors } 
+    setValue,
+    watch,
+    formState,
   } = useForm<z.infer<typeof companySchema>>({
+    mode: 'onBlur',
+    reValidateMode: 'onBlur',
     resolver: zodResolver(companySchema),
     defaultValues: {
       name: '',
@@ -26,6 +29,15 @@ export function useCompany() {
       phone: '',
       email: '',
       logo: '',
+      category_auto: false,
+      category_format: '',
+      category_separator: null,
+      user_auto: false,
+      user_format: '',
+      user_separator: null,
+      item_auto: false,
+      item_format: '',
+      item_separator: null,
     },
   })
 
@@ -41,14 +53,23 @@ export function useCompany() {
       phone: data?.phone || '',
       email: data?.email || '',
       logo: data?.logo || '',
+      category_auto: data?.category_auto || false,
+      category_format: data?.category_format || '',
+      category_separator: data?.category_separator || null,
+      user_auto: data?.user_auto || false,
+      user_format: data?.user_format || '',
+      user_separator: data?.user_separator || null,
+      item_auto: data?.item_auto || false,
+      item_format: data?.item_format || '',
+      item_separator: data?.item_separator || null,
     })
   }
 
   const onSubmit = handleSubmit(async (body) => {
     setLoading(true)
     try {
-      const res = await fetch(`/api/company${company ? `/${company.id}` : ''}`, {
-        method: company ? 'PATCH' : 'POST',
+      const res = await fetch(`/api/company`, {
+        method: 'POST',
         body: JSON.stringify(body),
         headers: { 'Content-Type': 'application/json' },
       })
@@ -66,5 +87,14 @@ export function useCompany() {
     }
   })
 
-  return { register, watch, errors, fetchCompany, loading, onSubmit, company }
+  return {
+    fetchCompany, 
+    loading, 
+    onSubmit, 
+    company,
+    setValue,
+    control,
+    watch,
+    formState,
+  }
 }
