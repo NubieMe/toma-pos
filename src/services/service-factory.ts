@@ -157,4 +157,24 @@ export class ServiceFactory {
 
     return await (prisma[model] as any).update({ where: { id }, data: { deleted_date: new Date(), deleted_by: userId } })
   }
+
+  static async count<T extends keyof PrismaClient>(model: T, id: string, tx?: Prisma.TransactionClient): Promise<number> {
+    return await ((tx ?? prisma)[model] as any).count({ where: { id } })
+  }
+
+  static async getSequence(name: string, tx?: Prisma.TransactionClient) {
+    return await (tx ?? prisma).sequence.findUnique({ where: { name } })
+  }
+
+  static async createSequence(data: Prisma.SequenceCreateInput, tx?: Prisma.TransactionClient) {
+    return await (tx ?? prisma).sequence.create({ data })
+  }
+
+  static async updateSequence(id: string, data: Prisma.SequenceUpdateInput, tx?: Prisma.TransactionClient) {
+    return await (tx ?? prisma).sequence.update({ where: { id }, data })
+  }
+
+  static async deleteSequence(id: string, tx?: Prisma.TransactionClient) {
+    return await (tx ?? prisma).sequence.delete({ where: { id } })
+  }
 }
