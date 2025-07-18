@@ -53,6 +53,7 @@ interface DataTableProps<T extends Record<string, any>> {
   setPage: React.Dispatch<React.SetStateAction<number>>
   rowsPerPage: number
   setRowsPerPage: React.Dispatch<React.SetStateAction<number>>
+  total: number
 }
 
 export default function DataTable<T extends Record<string, any>>({
@@ -72,6 +73,7 @@ export default function DataTable<T extends Record<string, any>>({
   setPage,
   rowsPerPage,
   setRowsPerPage,
+  total,
 }: DataTableProps<T>) {
   const [selected, setSelected] = React.useState<readonly (string | number)[]>([])
 
@@ -109,9 +111,8 @@ export default function DataTable<T extends Record<string, any>>({
   const visibleRows = React.useMemo(
     () =>
       [...rows]
-        .sort(getComparator(order, orderBy))
-        .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
-    [order, orderBy, page, rowsPerPage, rows]
+        .sort(getComparator(order, orderBy)),
+    [order, orderBy, rows]
   )
 
   const isSelected = (id: string | number) => selected.includes(id)
@@ -221,7 +222,7 @@ export default function DataTable<T extends Record<string, any>>({
         <TablePagination
           rowsPerPageOptions={[10, 20, 50, 100, 500, 1000]}
           component="div"
-          count={rows.length}
+          count={total}
           rowsPerPage={rowsPerPage}
           labelRowsPerPage="Data per page"
           page={page}
