@@ -41,6 +41,7 @@ export default function Page() {
     fetchRoles,
     handleClick,
     handleDelete,
+    total,
   } = useRole()
 
   const columns: TableColumn<Role>[] = [
@@ -62,6 +63,7 @@ export default function Page() {
       <DataTable
         loading={loading}
         rows={roles}
+        total={total}
         rowIdKey='id'
         columns={columns}
         title='Role Management'

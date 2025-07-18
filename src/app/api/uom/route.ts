@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
     const data = await ServiceFactory.create('uom', body, user.id)
 
     return NextResponse.json({
-      message: "UOM created successfully",
+      message: "UOM berhasil ditambahkan",
       data,
     }, { status: 201 })
   } catch (error) {

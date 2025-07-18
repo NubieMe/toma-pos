@@ -11,6 +11,7 @@ export default function useMenu() {
   const [data, setData] = React.useState<Menu | null>(null)
   const [loading, setLoading] = React.useState(false)
   const { menus, setMenus, deleteMenu } = useMenuStore()
+  const [total, setTotal] = React.useState(0)
   const [action, setAction] = React.useState<ActionTable[]>([])
   const [search, setSearch] = React.useState('')
   const [page, setPage] = React.useState(0)
@@ -56,9 +57,10 @@ export default function useMenu() {
       }
 
       const res = await fetch(url)
-      const dat = (await res.json()).data
+      const { data, total } = await res.json()
 
-      setMenus(dat)
+      setMenus(data)
+      setTotal(total)
     } catch (err) {
       console.error('Error loading menus', err)
     } finally {
@@ -94,5 +96,6 @@ export default function useMenu() {
     menus,
     setMenus,
     fetchMenus,
+    total,
   }
 }

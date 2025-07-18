@@ -42,7 +42,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       }
     })
     
-    return NextResponse.json({ message: "Permission saved successfully" })
+    return NextResponse.json({ message: "Permission berhasil disimpan" })
   } catch (error) {
     return errorHandler(error as ResponseError)
   }

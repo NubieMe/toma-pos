@@ -42,6 +42,7 @@ export default function Page() {
     setOrder,
     orderBy,
     setOrderBy,
+    total,
   } = useMenu()
 
   const columns: TableColumn<Menu>[] = [
@@ -66,6 +67,7 @@ export default function Page() {
         loading={loading}
         columns={columns}
         rows={menus}
+        total={total}
         title="Menu Configuration"
         rowIdKey="id"
         getRowActions={() => action}

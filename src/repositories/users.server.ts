@@ -44,7 +44,7 @@ export const createUser = async (username: string, password: string, roleId: str
         data: {
             username,
             password,
-            role: { connect: { id: roleId } },
+            role_id: roleId,
         },
         select: {
             id: true,

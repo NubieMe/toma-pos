@@ -32,7 +32,7 @@ const PermissionByRoleTab: React.FC<Props> = ({
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
       <Paper variant="outlined" className="md:col-span-1 p-2">
-        <Typography variant="h6" className="p-2 font-semibold">Role List</Typography>
+        <Typography variant="h6" className="p-2 font-semibold">Daftar Role</Typography>
         <List component="nav">
           {roles.map(role => (
             <ListItemButton
@@ -50,7 +50,7 @@ const PermissionByRoleTab: React.FC<Props> = ({
         {selectedRoleId ? (
           <Box>
             <Typography variant="h6" className="mb-4 font-semibold">
-              Set Permission For: <span style={{ color: theme.palette.primary.main }}>{roles.find(r => r.id === selectedRoleId)?.name}</span>
+              Atur permission untuk role: <span style={{ color: theme.palette.primary.main }}>{roles.find(r => r.id === selectedRoleId)?.name}</span>
             </Typography>
             <PermissionTree
               menus={menus}
@@ -61,7 +61,7 @@ const PermissionByRoleTab: React.FC<Props> = ({
           </Box>
         ) : (
           <Box className="flex items-center justify-center h-full">
-            <Typography color="text.secondary">Select Role.</Typography>
+            <Typography color="text.secondary">Pilih role untuk mengatur permission.</Typography>
           </Box>
         )}
       </Paper>

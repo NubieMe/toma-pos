@@ -9,6 +9,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         const { id } = await params
         const data = await ServiceFactory.getOne('uom', id)
 
+        if (!data) {
+            return NextResponse.json({ message: "UOM tidak ditemukan" }, { status: 404 })
+        }
+
         return NextResponse.json({
             data,
         })
@@ -22,9 +26,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         const { id } = await params
         const body = await req.json()
         const user = JSON.parse(req.headers.get('x-user-payload')!) as Session
+        const existing = await ServiceFactory.count('uom', id)
+
+        if (!existing) {
+            return NextResponse.json({ message: "UOM tidak ditemukan" }, { status: 404 })
+        }
         const data = await ServiceFactory.update('uom', id, body, user.id)
 
-        return NextResponse.json({ message: "UOM updated successfully", data })
+        return NextResponse.json({ message: "UOM berhasil diperbarui", data })
     } catch (error) {
         return errorHandler(error as ResponseError)
     }
@@ -34,9 +43,14 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     try {
         const { id } = await params
         const user = JSON.parse(req.headers.get('x-user-payload')!) as Session
+        const existing = await ServiceFactory.count('uom', id)
+
+        if (!existing) {
+            return NextResponse.json({ message: "UOM tidak ditemukan" }, { status: 404 })
+        }
         const data = await ServiceFactory.delete('uom', id, user.id)
 
-        return NextResponse.json({ message: "UOM deleted successfully", data })
+        return NextResponse.json({ message: "UOM berhasil dihapus", data })
     } catch (error) {
         return errorHandler(error as ResponseError)
     }

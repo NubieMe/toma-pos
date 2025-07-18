@@ -42,6 +42,7 @@ export default function Page() {
     setOrderBy,
     handleDelete,
     handleClick,
+    total,
   } = useUom()
 
   const columns: TableColumn<Uom>[] = [
@@ -65,6 +66,7 @@ export default function Page() {
         loading={loading}
         columns={columns}
         rows={uoms}
+        total={total}
         rowIdKey='id'
         getRowActions={() => action}
         onActionClick={(action, row) => {

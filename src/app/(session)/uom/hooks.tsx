@@ -6,6 +6,7 @@ import React from "react"
 
 export default function useUom() {
   const { uoms, setUoms, deleteUom } = useUomStore()
+  const [total, setTotal] = React.useState(0)
   const [open, setOpen] = React.useState(false)
   const [openDelete, setOpenDelete] = React.useState(false)
   const [mode, setMode] = React.useState<'add' | 'edit' | 'view'>('view')
@@ -48,8 +49,10 @@ export default function useUom() {
     if (!search) setLoading(true)
     try {
       const res = await fetch(`/api/uom?page=${page + 1}&limit=${rowsPerPage}&order=${orderBy}-${order}`)
-      const dat = (await res.json()).data
-      setUoms(dat)
+      const { data, total } = await res.json()
+
+      setUoms(data)
+      setTotal(total)
     } catch (err) {
       console.error('Error loading uoms', err)
     } finally {
@@ -82,6 +85,7 @@ export default function useUom() {
     setOpen,
     setOpenDelete,
     setMode,
-    setData
+    setData,
+    total,
   }
 }

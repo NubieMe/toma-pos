@@ -51,6 +51,11 @@ const theme = (mode: PaletteMode) => createTheme({
         variant: 'standard',
       }
     },
+    MuiSelect: {
+      defaultProps: {
+        variant: 'standard',
+      },
+    },
     MuiButton: {
       styleOverrides: {
         root: {

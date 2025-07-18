@@ -1,8 +1,8 @@
 // auth-context.tsx
 'use client'
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import { useRouter } from 'next/navigation'
+import React from 'react'
+import { usePathname, useRouter } from 'next/navigation'
 import { Session } from '@/types/session'
 
 interface AuthContextType {
@@ -11,13 +11,14 @@ interface AuthContextType {
   logout: () => void
 }
 
-const AuthContext = createContext<AuthContextType | null>(null)
+const AuthContext = React.createContext<AuthContextType | null>(null)
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<Session | null>(null)
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = React.useState<Session | null>(null)
   const router = useRouter()
+  const pathname = usePathname()
 
-  useEffect(() => {
+  React.useEffect(() => {
     const fetchData = async () => {
       try {
         const res = await fetch('/api/session')
@@ -31,8 +32,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error('Error decoding session cookie:', error)
       }
     }
-    
-    if (!user) fetchData()
+
+    if (!user && pathname !== '/login') fetchData()
   }, [router, user])
 
   const logout = () => {
@@ -48,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext)
+  const context = React.useContext(AuthContext)
   if (!context) throw new Error('useAuth harus digunakan dalam AuthProvider')
   return context
 }

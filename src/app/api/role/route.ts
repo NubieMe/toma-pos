@@ -13,14 +13,14 @@ export async function POST(req: NextRequest) {
 
     if (existingRole) {
       return NextResponse.json({
-        message: "Role already exists" 
+        message: "Role sudah ada", 
       }, { status: 400 });
     }
 
     const data = await insertRole(body);
 
     return NextResponse.json({
-      message: "Role created successfully",
+      message: "Role berhasil ditambahkan",
       data,
     }, { status: 201 });
   } catch (error) {

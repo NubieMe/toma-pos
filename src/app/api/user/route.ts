@@ -17,10 +17,10 @@ export async function POST(req: NextRequest) {
   const { username, password, role_id } = await req.json()
 
   const existingUser = await prisma.user.findUnique({ where: { username } })
-  if (existingUser) return NextResponse.json({ message: 'Username already exists' }, { status: 400 })
+  if (existingUser) return NextResponse.json({ message: 'Username sudah ada' }, { status: 400 })
 
   const existingRole = await prisma.role.findUnique({ where: { id: role_id } })
-  if (!existingRole) return NextResponse.json({ message: 'Role not found' }, { status: 400 })
+  if (!existingRole) return NextResponse.json({ message: 'Role tidak ditemukan' }, { status: 400 })
 
   const hashed = await hash(password, 10)
 
@@ -37,12 +37,16 @@ export async function POST(req: NextRequest) {
     },
   })
 
-  return NextResponse.json({ message: 'User created successfully', data }, { status: 201 })
+  return NextResponse.json({ message: 'User berhasil ditambahkan', data }, { status: 201 })
 }
 
 export async function GET(req: NextRequest) {
   try {
     const data = await ServiceFactory.getAll('user', req.nextUrl.searchParams)
+
+    if (!data) {
+      return NextResponse.json({ message: 'User tidak ditemukan' }, { status: 404 })
+    }
 
     return NextResponse.json({ data })
   } catch (error) {

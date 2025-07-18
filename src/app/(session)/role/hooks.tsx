@@ -17,6 +17,7 @@ export default function useRole() {
   const [order, setOrder] = React.useState<'asc' | 'desc'>('desc')
   const [orderBy, setOrderBy] = React.useState<keyof Role>('created_date')
   const { roles, setRoles, deleteRole } = useRoleStore()
+  const [total, setTotal] = React.useState(0)
 
   const fetchRoles = async () => {
     if (!search) setLoading(true)
@@ -28,8 +29,10 @@ export default function useRole() {
       }
 
       const res = await fetch(url)
-      const dat = (await res.json()).data
-      setRoles(dat)
+      const { data, total } = await res.json()
+
+      setRoles(data)
+      setTotal(total)
     } catch (err) {
       console.error('Error loading roles', err)
     } finally {
@@ -93,5 +96,6 @@ export default function useRole() {
     fetchRoles,
     handleClick,
     handleDelete,
+    total,
   }
 }

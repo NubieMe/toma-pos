@@ -114,6 +114,7 @@ export default function usePermission() {
     if (!endpoint) return;
 
     try {
+      toast({ description: 'Menyimpan...' });
       const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -238,6 +239,8 @@ export default function usePermission() {
         fetchData();
       })
       setOpen(true);
+    } else {
+      fetchData();
     }
   }
 

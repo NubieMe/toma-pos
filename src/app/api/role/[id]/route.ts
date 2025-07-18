@@ -11,6 +11,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         const { id } = await params;
         const data = await ServiceFactory.getOne('role', id);
 
+        if (!data) {
+            return NextResponse.json({ message: "Role tidak ditemukan" }, { status: 404 });
+        }
+
         return NextResponse.json({ data });
     } catch (error) {
         return errorHandler(error as ResponseError);
@@ -25,13 +29,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         const user = JSON.parse(req.headers.get('x-user-payload')!) as Session
 
         if (!existingRole) {
-            return NextResponse.json({ message: "Role not found" }, { status: 404 });
+            return NextResponse.json({ message: "Role tidak ditemukan" }, { status: 404 });
         } else if (unedited.includes(existingRole.name)) {
-            return NextResponse.json({ message: "Role cannot be edited" }, { status: 403 });
+            return NextResponse.json({ message: "Role tidak bisa diubah" }, { status: 403 });
         }
         const data = await ServiceFactory.update('role', id, body, user.id);
 
-        return NextResponse.json({ message: "Role updated successfully", data });
+        return NextResponse.json({ message: "Role berhasil diperbarui", data });
     } catch (error) {
         return errorHandler(error as ResponseError);
     }
@@ -44,13 +48,13 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
         const user = JSON.parse(req.headers.get('x-user-payload')!) as Session
 
         if (!existingRole) {
-            return NextResponse.json({ message: "Role not found" }, { status: 404 });
+            return NextResponse.json({ message: "Role tidak ditemukan" }, { status: 404 });
         } else if (unedited.includes(existingRole.name)) {
-            return NextResponse.json({ message: "Role cannot be deleted" }, { status: 403 });
+            return NextResponse.json({ message: "Role tidak bisa dihapus" }, { status: 403 });
         }
         const data = await ServiceFactory.delete('role', id, user.id);
 
-        return NextResponse.json({ message: "Role deleted successfully", data });
+        return NextResponse.json({ message: "Role berhasil dihapus", data });
     } catch (error) {
         return errorHandler(error as ResponseError);
     }

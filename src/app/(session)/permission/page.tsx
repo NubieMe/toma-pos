@@ -43,7 +43,7 @@ const PermissionPage = () => {
           <Box>
             <Typography variant="h4" component="h1" className="font-bold">Permission Management</Typography>
             <Typography variant="body1" color="text.secondary">
-              Set permission role and menu.
+              Atur hak akses untuk setiap role pada menu yang tersedia.
             </Typography>
           </Box>
           <Box className='gap-10'>

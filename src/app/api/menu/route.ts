@@ -41,17 +41,17 @@ export async function GET(req: NextRequest) {
                   if (grandSubMenu.path) availMenu.push(grandSubMenu.path)
                   return grandSubMenu
                 }
-              })
+              }).sort((m1: Menu, m2: Menu) => m1.order - m2.order)
 
               if (subMenu.path) availMenu.push(subMenu.path)
               return true
             }
-          })
+          }).sort((m1: Menu, m2: Menu) => m1.order - m2.order)
           
           if (menu.path) availMenu.push(menu.path)
           return true
         }
-      })
+      }).sort((m1: Menu, m2: Menu) => m1.order - m2.order)
     }
 
     const res = NextResponse.json({ data, total })
@@ -121,7 +121,7 @@ export async function POST(req: NextRequest) {
       data.permissions = data.permissions ? [...data.permissions, permission] : [permission]
     }
 
-    return NextResponse.json({ message: "Menu created successfully", data })
+    return NextResponse.json({ message: "Menu berhasil ditambahkan", data })
   } catch (error) {
     return errorHandler(error as ResponseError)
   }

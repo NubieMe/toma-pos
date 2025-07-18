@@ -44,10 +44,10 @@ const NavRenderer = ({
   const allMenus = flattenMenus(menus)
 
   React.useEffect(() => {
-    const matched = allMenus.find(menu => isActive(`/${menu.path || ''}`))
+    const matched = allMenus.find(menu => (!menu.children || menu.children.length === 0) && isActive(`/${menu.path || ''}`))
     if (!matched || matched.path === '') return
     setActiveMenu(matched)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [menus, isActive])
 
   return (

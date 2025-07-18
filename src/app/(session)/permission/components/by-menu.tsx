@@ -27,7 +27,7 @@ const PermissionByMenuTab: React.FC<Props> = ({ roles, menus, permissions, onPer
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
       <Paper variant="outlined" className="md:col-span-1 p-2">
-        <Typography variant="h6" className="p-2 font-semibold">Menu List</Typography>
+        <Typography variant="h6" className="p-2 font-semibold">Daftar Menu</Typography>
         <SelectableMenuTree
           menus={menus}
           selectedMenuId={selectedMenu?.id || null}
@@ -39,7 +39,7 @@ const PermissionByMenuTab: React.FC<Props> = ({ roles, menus, permissions, onPer
         {selectedMenu ? (
           <Box>
             <Typography variant="h6" className="mb-4 font-semibold">
-              Set Permission For: <span style={{ color: theme.palette.primary.main }}>{selectedMenu.name}</span>
+              Atur permission untuk menu: <span style={{ color: theme.palette.primary.main }}>{selectedMenu.name}</span>
             </Typography>
             <Box>
               {roles.map((role, index) => {
@@ -86,7 +86,7 @@ const PermissionByMenuTab: React.FC<Props> = ({ roles, menus, permissions, onPer
           </Box>
         ) : (
           <Box className="flex items-center justify-center h-full" sx={{ color: 'text.secondary' }}>
-            Select a menu.
+            Pilih menu dari daftar untuk mengatur permission.
           </Box>
         )}
       </Paper>
