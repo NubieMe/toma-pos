@@ -15,6 +15,7 @@
     "@mui/icons-material": "^7.0.1",
     "@mui/material": "^7.0.1",
     "@prisma/client": "^6.5.0",
+    "@react-google-maps/api": "^2.20.7",
     "bcryptjs": "^3.0.2",
     "cookie": "^1.0.2",
     "date-fns": "^4.1.0",
