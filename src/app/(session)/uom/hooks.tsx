@@ -48,7 +48,12 @@ export default function useUom() {
   const fetchUoms = async () => {
     if (!search) setLoading(true)
     try {
-      const res = await fetch(`/api/uom?page=${page + 1}&limit=${rowsPerPage}&order=${orderBy}-${order}`)
+      let url = `/api/uom?page=${page + 1}&limit=${rowsPerPage}&order=${orderBy}-${order}`
+      if (search) {
+        const value = JSON.stringify({ 'name-description': search })
+        url += `&search=${value}`
+      }
+      const res = await fetch(url)
       const { data, total } = await res.json()
 
       setUoms(data)

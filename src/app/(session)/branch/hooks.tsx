@@ -1,25 +1,46 @@
-import { toast } from "@/hooks/use-toast"
-import useCategoryStore from "@/store/category"
-import { ActionTable } from "@/types/action"
-import { Category } from "@prisma/client"
-import React from "react"
+import { toast } from "@/hooks/use-toast";
+import useBranchStore from "@/store/branch";
+import { ActionTable } from "@/types/action";
+import { Branch } from "@/types/branch";
+import React from "react";
 
-export default function useCategory() {
-  const { categories, setCategories, deleteCategory } = useCategoryStore()
+export default function useBranch() {
+  const { branches, setBranches, deleteBranch } = useBranchStore()
   const [total, setTotal] = React.useState(0)
   const [open, setOpen] = React.useState(false)
   const [openDelete, setOpenDelete] = React.useState(false)
   const [mode, setMode] = React.useState<'add' | 'edit' | 'view'>('view')
-  const [data, setData] = React.useState<Category | null>(null)
+  const [data, setData] = React.useState<Branch | null>(null)
   const [loading, setLoading] = React.useState(false)
   const [action, setAction] = React.useState<ActionTable[]>([])
   const [search, setSearch] = React.useState('')
   const [page, setPage] = React.useState(0)
   const [rowsPerPage, setRowsPerPage] = React.useState(10)
   const [order, setOrder] = React.useState<'asc' | 'desc'>('desc')
-  const [orderBy, setOrderBy] = React.useState<keyof Category>('created_date')
-  
-  const handleClick = (body: Category | null, mode: 'add' | 'edit' | 'view' | 'delete' = 'view') => {
+  const [orderBy, setOrderBy] = React.useState<keyof Branch>('created_date')
+
+  const fetchBranches = async () => {
+    setLoading(true)
+    try {
+      let url = `/api/branch?page=${page + 1}&limit=${rowsPerPage}&order=${orderBy}-${order}`
+      if (search) {
+        const value = JSON.stringify({ 'name-phone-address': search })
+        url += `&search=${value}`
+      }
+      const res = await fetch(url)
+      const { data, total } = await res.json()
+
+      setBranches(data)
+      setData(data)
+      setTotal(total)
+    } catch (error) {
+      console.error('Error loading branches', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleClick = (body: Branch | null, mode: 'add' | 'edit' | 'view' | 'delete' = 'view') => {
     setData(body)
     if (mode === 'delete') {
       setOpenDelete(true)
@@ -32,36 +53,16 @@ export default function useCategory() {
   const handleDelete = async () => {
     const duration = 5000
     try {
-      const res = await fetch(`/api/category/${data?.id}`, {
+      const res = await fetch(`/api/branch/${data?.id}`, {
         method: 'DELETE',
       })
       const result = (await res.json()).message
       toast({ description: result, duration })
-      deleteCategory(data!.id)
+      deleteBranch(data!.id)
     } catch (error) {
       toast({ description: (error as Error).message, duration })
     } finally {
       setOpenDelete(false)
-    }
-  }
-  
-  const fetchCategories = async () => {
-    if (!search) setLoading(true)
-    try {
-      let url = `/api/category?page=${page + 1}&limit=${rowsPerPage}&order=${orderBy}-${order}`
-      if (search) {
-        const value = JSON.stringify({ 'name-code-description': search })
-        url += `&search=${value}`
-      }
-      const res = await fetch(url)
-      const { data, total } = await res.json()
-
-      setCategories(data)
-      setTotal(total)
-    } catch (err) {
-      console.error('Error loading categories', err)
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -79,8 +80,8 @@ export default function useCategory() {
     orderBy,
     handleClick,
     handleDelete,
-    fetchCategories,
-    categories,
+    fetchBranches,
+    branches,
     setAction,
     setSearch,
     setPage,
