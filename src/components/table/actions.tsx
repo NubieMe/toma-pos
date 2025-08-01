@@ -1,3 +1,4 @@
+import { ActionTable } from "@/types/action";
 import { Box, Icon, IconButton, Tooltip } from "@mui/material"
 
 export default function RowActions<T>({
@@ -6,8 +7,8 @@ export default function RowActions<T>({
     onActionClick,
   }: {
     row: T
-    actions: ('edit' | 'view' | 'delete')[]
-    onActionClick?: (action: 'edit' | 'view' | 'delete', row: T) => void
+    actions: ActionTable[]
+    onActionClick?: (action: ActionTable, row: T) => void
   }) {
     return (
       <Box sx={{ gap: 0.5 }}>

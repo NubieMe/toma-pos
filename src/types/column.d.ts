@@ -4,5 +4,6 @@ export interface TableColumn<T> {
     numeric?: boolean
     disablePadding?: boolean
     render?: (value: T[keyof T], row: T) => React.ReactNode
+    disableSort?: boolean
 }
   

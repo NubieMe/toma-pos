@@ -6,6 +6,7 @@ import {
   Checkbox,
   CircularProgress,
   Paper,
+  Table,
   TableBody,
   TableCell,
   TableContainer,
@@ -20,6 +21,7 @@ import { visuallyHidden } from '@mui/utils'
 import { TableColumn } from '@/types/column'
 import RowActions from './actions'
 import TablePaginationActions from './pagination-actions'
+import { ActionTable } from '@/types/action'
 
 function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
   if (b[orderBy] < a[orderBy]) return -1
@@ -42,8 +44,8 @@ interface DataTableProps<T extends Record<string, any>> {
   rowIdKey?: keyof T
   title?: string
   actions?: React.ReactNode
-  getRowActions?: (row: T) => ('edit' | 'view' | 'delete')[]
-  onActionClick?: (action: 'edit' | 'view' | 'delete', row: T) => void
+  getRowActions?: (row: T) => ActionTable[]
+  onActionClick?: (action: ActionTable, row: T) => void
   loading: boolean
   order: 'asc' | 'desc'
   setOrder: React.Dispatch<React.SetStateAction<'asc' | 'desc'>>
@@ -122,7 +124,7 @@ export default function DataTable<T extends Record<string, any>>({
       <Paper sx={{ width: '100%', mb: 2 }}>
         <EnhancedTableToolbar numSelected={selected.length} title={title} actions={actions} />
         <TableContainer>
-          <table aria-labelledby="tableTitle" style={{ width: '100%', minWidth: 750 }}>
+          <Table aria-labelledby="tableTitle" style={{ minWidth: 750 }}>
             <TableHead>
               <TableRow>
                 <TableCell padding="checkbox">
@@ -133,9 +135,9 @@ export default function DataTable<T extends Record<string, any>>({
                     onChange={handleSelectAllClick}
                   />
                 </TableCell>
-                {columns.map((col) => (
+                {columns.map((col, i) => (
                   <TableCell
-                    key={String(col.key)}
+                    key={i}
                     align={col.numeric ? 'right' : 'left'}
                     padding={col.disablePadding ? 'none' : 'normal'}
                     sortDirection={orderBy === col.key ? order : false}
@@ -144,6 +146,7 @@ export default function DataTable<T extends Record<string, any>>({
                       active={orderBy === col.key}
                       direction={orderBy === col.key ? order : 'asc'}
                       onClick={(e) => handleRequestSort(e, col.key)}
+                      disabled={col.disableSort ? true : false}
                     >
                       {col.label}
                       {orderBy === col.key && (
@@ -195,9 +198,9 @@ export default function DataTable<T extends Record<string, any>>({
                           checked={selected}
                         />
                       </TableCell>
-                      {columns.map((col) => (
+                      {columns.map((col, i) => (
                         <TableCell
-                          key={String(col.key)}
+                          key={i}
                           align={col.numeric ? 'right' : 'left'}
                         >
                           {col.render ? col.render(row[col.key], row) : row[col.key]}
@@ -217,7 +220,7 @@ export default function DataTable<T extends Record<string, any>>({
                 })
               )}
             </TableBody>
-          </table>
+          </Table>
         </TableContainer>
         <TablePagination
           rowsPerPageOptions={[10, 20, 50, 100, 500, 1000]}
