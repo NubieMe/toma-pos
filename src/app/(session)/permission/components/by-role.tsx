@@ -3,7 +3,7 @@
 
 import PermissionTree from '@/app/(session)/permission/components/tree/menu-permission';
 import { Menu } from '@/types/menu';
-import { PermissionObject, PermissionsState } from '@/types/permission';
+import { PermissionsState } from '@/types/permission';
 import { Role } from '@prisma/client';
 import { 
   Paper, 
@@ -19,13 +19,14 @@ interface Props {
   roles: Role[];
   menus: Menu[];
   permissions: PermissionsState;
-  onPermissionChange: (roleId: string, menuId: string, permission: keyof PermissionObject, checked: boolean) => void;
+  onPermissionChange: (roleId: string, menuId: string, action: string, checked: boolean) => void;
   selectedRoleId: string | null;
   onSelectRole: (id: string) => void;
+  disabled: boolean
 }
 
 const PermissionByRoleTab: React.FC<Props> = ({ 
-  roles, menus, permissions, onPermissionChange, selectedRoleId, onSelectRole 
+  roles, menus, permissions, onPermissionChange, selectedRoleId, onSelectRole, disabled
 }) => {
   const theme = useTheme();
 
@@ -57,6 +58,7 @@ const PermissionByRoleTab: React.FC<Props> = ({
               roleId={selectedRoleId}
               permissionsForRole={permissions[selectedRoleId] || {}} 
               onPermissionChange={onPermissionChange}
+              disabled={disabled}
             />
           </Box>
         ) : (

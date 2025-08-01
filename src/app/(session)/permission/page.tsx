@@ -1,14 +1,16 @@
 'use client'
 
 import AlertDialog from '@/components/ui/alert';
-import { Box, Button, CircularProgress, Container, Icon, IconButton, Paper, Tab, Tabs, Tooltip, Typography } from '@mui/material';
+import { Box, Button, CircularProgress, Icon, IconButton, Paper, Tab, Tabs, Tooltip, Typography } from '@mui/material';
 import React from 'react';
 import PermissionByMenuTab from './components/by-menu';
 import PermissionByRoleTab from './components/by-role';
 import TabPanel from './components/tab';
 import usePermission from './hooks';
+import { usePermission as usePermissionState } from '@/hooks/use-permission';
 
 const PermissionPage = () => {
+  const { permission } = usePermissionState();
   const {
     fetchData,
     menus,
@@ -37,7 +39,7 @@ const PermissionPage = () => {
   }, []);
 
   return (
-    <Container maxWidth="xl" className="py-4">
+    <Box>
       <Paper elevation={0} sx={{ p: 4, borderRadius: 4 }}>
         <Box className='flex justify-between items-center mb-4'>
           <Box>
@@ -84,6 +86,7 @@ const PermissionPage = () => {
                 onPermissionChange={handlePermissionChange}
                 selectedRoleId={selectedRoleId}
                 onSelectRole={handleRoleSelection}
+                disabled={!permission.includes('edit')}
               />
             )
           }
@@ -101,6 +104,7 @@ const PermissionPage = () => {
                 onPermissionChange={handlePermissionChange}
                 selectedMenu={selectedMenu}
                 onSelectMenu={handleMenuSelection}
+                disabled={!permission.includes('edit')}
               />
             )
           }
@@ -112,7 +116,7 @@ const PermissionPage = () => {
         description={description}
         onConfirm={handleConfirmAction}
       />
-    </Container>
+    </Box>
   );
 };
 

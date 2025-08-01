@@ -1,27 +1,29 @@
 import { Menu } from '@/types/menu';
-import { Role } from '@prisma/client';
-import { PermissionObject, PermissionsState } from '@/types/permission';
-import { 
-  Paper, 
-  Typography, 
-  Box, 
-  Checkbox, 
+import { PermissionsState } from '@/types/permission';
+import {
+  Box,
+  Checkbox,
   Collapse,
   Divider,
+  FormControlLabel,
+  Paper,
+  Typography,
   useTheme
 } from '@mui/material';
+import { Role } from '@prisma/client';
 import SelectableMenuTree from './tree/menu-list';
 
 interface Props {
   roles: Role[];
   menus: Menu[];
   permissions: PermissionsState;
-  onPermissionChange: (roleId: string, menuId: string, permission: keyof PermissionObject, checked: boolean) => void;
+  onPermissionChange: (roleId: string, menuId: string, action: string, checked: boolean) => void;
   selectedMenu: Menu | null;
   onSelectMenu: (menu: Menu) => void;
+  disabled: boolean
 }
 
-const PermissionByMenuTab: React.FC<Props> = ({ roles, menus, permissions, onPermissionChange, selectedMenu, onSelectMenu }) => {
+const PermissionByMenuTab: React.FC<Props> = ({ roles, menus, permissions, onPermissionChange, selectedMenu, onSelectMenu, disabled }) => {
   const theme = useTheme();
 
   return (
@@ -41,9 +43,10 @@ const PermissionByMenuTab: React.FC<Props> = ({ roles, menus, permissions, onPer
             <Typography variant="h6" className="mb-4 font-semibold">
               Atur permission untuk menu: <span style={{ color: theme.palette.primary.main }}>{selectedMenu.name}</span>
             </Typography>
-            <Box>
+            <Box className="mt-4">
               {roles.map((role, index) => {
-                const hasAccess = permissions?.[role.id]?.[selectedMenu.id]?.access || false;
+                const hasAccess = permissions?.[role.id]?.[selectedMenu.id!] !== undefined;
+                const grantedActionsForRole = permissions?.[role.id]?.[selectedMenu.id!] || [];
                 
                 return (
                   <Box key={role.id}>
@@ -54,28 +57,43 @@ const PermissionByMenuTab: React.FC<Props> = ({ roles, menus, permissions, onPer
                       <Typography variant="body1" className="flex-1 p-2 font-medium">
                         {role.name}
                       </Typography>
-                      <label className="flex items-center space-x-1 cursor-pointer p-2 text-sm">
-                        <Checkbox
-                          size="small"
-                          checked={hasAccess}
-                          onChange={(e) => onPermissionChange(role.id, selectedMenu.id!, 'access', e.target.checked)}
-                        />
-                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>Access</Typography>
-                      </label>
+                      <FormControlLabel
+                        className="pr-2"
+                        control={
+                          <Checkbox
+                            size="small"
+                            checked={hasAccess}
+                            onChange={(e) => onPermissionChange(role.id, selectedMenu.id!, 'access', e.target.checked)}
+                            disabled={disabled}
+                          />
+                        }
+                        label={<Typography variant="body2" sx={{ color: 'text.secondary' }}>Access</Typography>}
+                        labelPlacement="start"
+                      />
                     </Box>
 
                     <Collapse in={hasAccess} timeout="auto" unmountOnExit>
-                      <Box className="flex items-center space-x-2 md:space-x-4 pr-4 pb-2 pl-6">
-                        {(['read', 'create', 'update', 'delete'] as const).map(p => (
-                          <label key={p} className="flex items-center space-x-1 cursor-pointer text-sm">
-                            <Checkbox
-                              size="small"
-                              checked={permissions?.[role.id]?.[selectedMenu.id!]?.[p] || false}
-                              onChange={e => onPermissionChange(role.id, selectedMenu.id!, p, e.target.checked)}
+                      <Box className="flex items-center flex-wrap gap-x-4 gap-y-1 pr-4 pb-2 pl-6">
+                        {selectedMenu.features && selectedMenu.features.length > 0 ? (
+                          typeof selectedMenu.features !== 'string' && selectedMenu.features.map(feature => (
+                            <FormControlLabel
+                              key={feature}
+                              control={
+                                <Checkbox
+                                  size="small"
+                                  checked={grantedActionsForRole.includes(feature)}
+                                  onChange={e => onPermissionChange(role.id, selectedMenu.id!, feature, e.target.checked)}
+                                  disabled={disabled}
+                                />
+                              }
+                              label={<Typography variant="caption" sx={{ color: 'text.secondary' }} className="capitalize">{feature}</Typography>}
                             />
-                            <Typography variant="caption" sx={{ color: 'text.secondary' }} className="capitalize">{p}</Typography>
-                          </label>
-                        ))}
+                          ))
+                        ) : (
+                          <Typography variant="caption" sx={{ color: 'text.secondary', fontStyle: 'italic', pl: 2 }}>
+                            (Menu ini tidak memiliki actions spesifik)
+                          </Typography>
+                        )}
                       </Box>
                     </Collapse>
                     {index < roles.length - 1 && <Divider />}

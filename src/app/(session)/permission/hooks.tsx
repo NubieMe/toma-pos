@@ -1,6 +1,7 @@
 import { toast } from "@/hooks/use-toast";
 import { Menu } from "@/types/menu";
-import { PermissionObject, PermissionsState, RawPermissionData } from "@/types/permission";
+import { PermissionsState, RawPermissionData } from "@/types/permission";
+import { findParents } from "@/utils/helper";
 import { Role } from "@prisma/client";
 import React from "react";
 
@@ -17,35 +18,12 @@ export default function usePermission() {
   const [description, setDescription] = React.useState('');
   const [pendingAction, setPendingAction] = React.useState<(() => void) | null>(null);
 
-  function normalizePermissions(perms: PermissionsState): PermissionsState {
-    const normalized: PermissionsState = {};
-
-    for (const roleId in perms) {
-      const rolePerms = perms[roleId];
-      const normalizedRolePerms: Record<string, PermissionObject> = {};
-      let hasAnyAccessInRole = false;
-
-      for (const menuId in rolePerms) {
-
-        if (rolePerms[menuId] && rolePerms[menuId].access) {
-          normalizedRolePerms[menuId] = rolePerms[menuId];
-          hasAnyAccessInRole = true;
-        }
-      }
-
-      if (hasAnyAccessInRole) {
-        normalized[roleId] = normalizedRolePerms;
-      }
-    }
-    return normalized;
-  };
-
   const fetchData = async () => {
     setLoading(true);
     try {
       const [roleRes, menuRes, permissionRes] = await Promise.all([
         fetch('/api/role'),
-        fetch('/api/menu?sidebar=true'),
+        fetch('/api/menu?permission=true'),
         fetch('/api/permission')
       ]);
 
@@ -63,10 +41,7 @@ export default function usePermission() {
       const initialPerms: PermissionsState = {};
       permissionData.forEach(p => {
         if (!initialPerms[p.role_id]) initialPerms[p.role_id] = {};
-        initialPerms[p.role_id][p.menu_id] = { 
-          access: true, 
-          read: p.read, create: p.create, update: p.update, delete: p.delete 
-        };
+        initialPerms[p.role_id][p.menu_id] = p.actions;
       });
 
       setPermissions(initialPerms);
@@ -78,38 +53,48 @@ export default function usePermission() {
     }
   };
 
-  const isDirty = React.useMemo(() => {
-    const normalizedCurrent = normalizePermissions(permissions);
-    const normalizedOriginal = normalizePermissions(originalPermissions);
+  function getComparableState(perms: PermissionsState): PermissionsState {
+    const clonedPerms = JSON.parse(JSON.stringify(perms));
     
-    return JSON.stringify(normalizedCurrent) !== JSON.stringify(normalizedOriginal);
+    for (const roleId in clonedPerms) {
+      for (const menuId in clonedPerms[roleId]) {
+        if (Array.isArray(clonedPerms[roleId][menuId])) {
+          clonedPerms[roleId][menuId].sort();
+        }
+      }
+    }
+    return clonedPerms;
+  };
+
+  const isDirty = React.useMemo(() => {
+    const comparableCurrent = getComparableState(permissions);
+    const comparableOriginal = getComparableState(originalPermissions);
+
+    return JSON.stringify(comparableCurrent) !== JSON.stringify(comparableOriginal);
   }, [permissions, originalPermissions]);
 
   const handleSave = async () => {
     let endpoint = '';
-    let payload: RawPermissionData[] = [];
+    let payload: { role_id: string; menu_id: string; actions: string[] }[] = [];
 
     if (activeTab === 0 && selectedRoleId) {
       endpoint = `/api/permission/role/${selectedRoleId}`;
       const permsForRole = permissions[selectedRoleId] || {};
-      
-      payload = Object.keys(permsForRole)
-        .filter(menuId => permsForRole[menuId].access)
-        .map(menuId => {
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const { access, ...rest } = permsForRole[menuId];
-          return { role_id: selectedRoleId, menu_id: menuId, ...rest };
-        });
+      payload = Object.keys(permsForRole).map(menuId => ({
+        role_id: selectedRoleId,
+        menu_id: menuId,
+        actions: permsForRole[menuId],
+      }));
     } else if (activeTab === 1 && selectedMenu?.id) {
       endpoint = `/api/permission/menu/${selectedMenu.id}`;
-      payload = roles
-        .filter(role => permissions[role.id]?.[selectedMenu.id!]?.access)
-        .map(role => {
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const { access, ...rest } = permissions[role.id][selectedMenu.id!];
-          return { role_id: role.id, menu_id: selectedMenu.id, ...rest };
-        });
-    }
+      payload = Object.keys(permissions)
+        .filter(roleId => permissions[roleId]?.[selectedMenu.id!])
+        .map(roleId => ({
+          role_id: roleId,
+          menu_id: selectedMenu.id,
+          actions: permissions[roleId][selectedMenu.id!],
+        }));
+    } 
 
     if (!endpoint) return;
 
@@ -120,66 +105,56 @@ export default function usePermission() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Gagal menyimpan permission');
-      }
-
+      if (!res.ok) throw new Error((await res.json()).message || 'Gagal menyimpan');
       const result = await res.json();
 
       setOriginalPermissions(JSON.parse(JSON.stringify(permissions)));
       toast({ variant: 'success', description: result.message })
     } catch (error) {
-      console.error("Error saat menyimpan:", error);
       toast({ variant: 'warning', description: (error as Error).message });
     }
   };
 
-  function handlePermissionChange(roleId: string, menuId: string, permission: keyof PermissionObject, checked: boolean) {
+  function handlePermissionChange(roleId: string, menuId: string, action: string, checked: boolean) {
     setPermissions(prev => {
       const newPermissions = JSON.parse(JSON.stringify(prev));
 
       if (!newPermissions[roleId]) newPermissions[roleId] = {};
+
+      if (action === 'access') {
+        if (checked) {
+          if (!newPermissions[roleId][menuId]) {
+            newPermissions[roleId][menuId] = [];
+          }
+        } else {
+          delete newPermissions[roleId][menuId];
+          if (Object.keys(newPermissions[roleId]).length === 0) {
+            delete newPermissions[roleId];
+          }
+        }
+        return newPermissions;
+      }
+
       if (!newPermissions[roleId][menuId]) {
-        newPermissions[roleId][menuId] = { access: false, read: false, create: false, update: false, delete: false };
-      }
-      
-      newPermissions[roleId][menuId][permission] = checked;
-
-      if (checked && permission !== 'access') {
-        newPermissions[roleId][menuId].access = true;
+        newPermissions[roleId][menuId] = [];
       }
 
-      if (permission === 'access' && !checked) {
-        Object.assign(newPermissions[roleId][menuId], { read: false, create: false, update: false, delete: false });
-      }
+      const currentActions = newPermissions[roleId][menuId] as string[];
+      const actionExists = currentActions.includes(action);
 
-      const syncAllParents = (menuList: Menu[]): void => {
-        menuList.forEach(menu => {
+      if (checked && !actionExists) {
+        newPermissions[roleId][menuId] = [...currentActions, action];
 
-          if (menu.children && menu.children.length) {
-
-            syncAllParents(menu.children);
-
-            const hasAnyChildAccess = menu.children.some(
-              child => newPermissions[roleId]?.[child.id]?.access
-            );
-
-            if (!newPermissions[roleId][menu.id]) {
-              newPermissions[roleId][menu.id] = { access: false, read: false, create: false, update: false, delete: false };
-            }
-
-            newPermissions[roleId][menu.id].access = hasAnyChildAccess;
-            
-            if (hasAnyChildAccess) {
-              Object.assign(newPermissions[roleId][menu.id], { read: false, create: false, update: false, delete: false });
-            }
+        const parents = findParents(menus, menuId);
+        parents.forEach(parent => {
+          if (!newPermissions[roleId][parent.id]) {
+            newPermissions[roleId][parent.id] = [];
           }
         });
-      };
 
-      syncAllParents(menus);
+      } else if (!checked && actionExists) {
+        newPermissions[roleId][menuId] = currentActions.filter(a => a !== action);
+      }
 
       return newPermissions;
     });
@@ -258,7 +233,6 @@ export default function usePermission() {
   };
 
   return {
-    normalizePermissions,
     fetchData,
     roles,
     menus,
