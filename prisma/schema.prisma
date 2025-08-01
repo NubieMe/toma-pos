@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -28,6 +28,7 @@ model User {
   password     String
   role_id      String?
   profile_id   String?   @unique
+  branch_id    String?
   created_date DateTime  @default(now())
   updated_date DateTime? @updatedAt
   created_by   String?
@@ -35,8 +36,9 @@ model User {
   deleted_date DateTime?
   deleted_by   String?
 
-  role       Role?        @relation(fields: [role_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
-  profile    Profile?     @relation(fields: [profile_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  role       Role?        @relation(fields: [role_id], references: [id], onUpdate: NoAction, onDelete: Cascade)
+  profile    Profile?     @relation(fields: [profile_id], references: [id], onUpdate: NoAction, onDelete: Cascade)
+  branch     Branch?      @relation(fields: [branch_id], references: [id], onUpdate: NoAction, onDelete: Cascade)
   attendance Attendance[]
 
   @@map("users")
@@ -86,6 +88,7 @@ model Menu {
   icon         String?
   order        Int
   is_active    Boolean   @default(true)
+  features     String[]  @default([])
   created_date DateTime  @default(now())
   updated_date DateTime? @updatedAt
   created_by   String?
@@ -93,7 +96,7 @@ model Menu {
   deleted_date DateTime?
   deleted_by   String?
 
-  parent   Menu?  @relation("MultiMenu", references: [id], fields: [parent_id], onUpdate: Cascade, onDelete: Cascade)
+  parent   Menu?  @relation("MultiMenu", references: [id], fields: [parent_id], onUpdate: NoAction, onDelete: Cascade)
   children Menu[] @relation("MultiMenu")
 
   permissions Permission[]
@@ -104,17 +107,18 @@ model Menu {
 model Permission {
   role_id      String
   menu_id      String
-  create       Boolean   @default(false)
-  read         Boolean   @default(false)
-  update       Boolean   @default(false)
-  delete       Boolean   @default(false)
+  actions      String[]  @default([])
+  // create       Boolean   @default(false)
+  // read         Boolean   @default(false)
+  // update       Boolean   @default(false)
+  // delete       Boolean   @default(false)
   created_date DateTime  @default(now())
   updated_date DateTime? @updatedAt
   created_by   String?
   updated_by   String?
 
-  role Role @relation(fields: [role_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
-  menu Menu @relation(fields: [menu_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  role Role @relation(fields: [role_id], references: [id], onUpdate: NoAction, onDelete: Cascade)
+  menu Menu @relation(fields: [menu_id], references: [id], onUpdate: NoAction, onDelete: Cascade)
 
   @@id([role_id, menu_id])
   @@map("permissions")
@@ -126,7 +130,7 @@ model Attendance {
   in      DateTime  @default(now())
   out     DateTime? @updatedAt
 
-  user User @relation(fields: [user_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  user User @relation(fields: [user_id], references: [id], onUpdate: NoAction, onDelete: Cascade)
 
   @@map("attendances")
 }
@@ -165,7 +169,7 @@ model Branch {
   name         String
   address      String?
   phone        String?
-  coordinate   Json
+  coordinate   Int[]     @default([])
   created_date DateTime  @default(now())
   updated_date DateTime? @updatedAt
   created_by   String?
@@ -174,6 +178,7 @@ model Branch {
   deleted_by   String?
 
   stocks Stock[]
+  users  User[]
 
   @@map("branches")
 }
@@ -206,7 +211,7 @@ model Category {
   deleted_date DateTime?
   deleted_by   String?
 
-  Item Item[]
+  items Item[]
 
   @@map("categories")
 }
@@ -218,6 +223,7 @@ model Item {
   description  String?
   uom_id       String
   category_id  String
+  vendible     Boolean   @default(false)
   created_date DateTime  @default(now())
   updated_date DateTime? @updatedAt
   created_by   String?
@@ -246,8 +252,8 @@ model Stock {
   deleted_date DateTime?
   deleted_by   String?
 
-  item     Item      @relation(fields: [item_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
-  branch   Branch    @relation(fields: [branch_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  item     Item      @relation(fields: [item_id], references: [id], onUpdate: NoAction, onDelete: Cascade)
+  branch   Branch    @relation(fields: [branch_id], references: [id], onUpdate: NoAction, onDelete: Cascade)
   stock_io StockIO[]
   to       StockIO[] @relation("StockIOTo")
   products Product[]
@@ -255,7 +261,7 @@ model Stock {
   @@map("stocks")
 }
 
-enum StockType {
+enum IOType {
   transfer
   consumption
   production
@@ -265,23 +271,31 @@ enum StockType {
   return
 }
 
+enum StatusType {
+  pending
+  success
+  failed
+  cancel
+}
+
 model StockIO {
-  id           String    @id @default(uuid())
-  type         StockType
+  id           String     @id @default(uuid())
+  type         IOType
   stock_id     String
   to_id        String?
   qty          Int
   price        Float
+  status       StatusType
   note         String?
-  created_date DateTime  @default(now())
-  updated_date DateTime? @updatedAt
+  created_date DateTime   @default(now())
+  updated_date DateTime?  @updatedAt
   created_by   String?
   updated_by   String?
   deleted_date DateTime?
   deleted_by   String?
 
-  stock Stock  @relation(fields: [stock_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
-  to    Stock? @relation("StockIOTo", fields: [to_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  stock Stock  @relation(fields: [stock_id], references: [id], onUpdate: NoAction, onDelete: Cascade)
+  to    Stock? @relation("StockIOTo", fields: [to_id], references: [id], onUpdate: NoAction, onDelete: Cascade)
 
   @@map("stocks_io")
 }
@@ -339,8 +353,8 @@ model Product {
   deleted_date        DateTime?
   deleted_by          String?
 
-  stock       Stock       @relation(fields: [stock_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
-  transaction Transaction @relation(fields: [transaction_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  stock       Stock       @relation(fields: [stock_id], references: [id], onUpdate: NoAction, onDelete: Cascade)
+  transaction Transaction @relation(fields: [transaction_id], references: [id], onUpdate: NoAction, onDelete: Cascade)
 
   @@map("products")
 }
