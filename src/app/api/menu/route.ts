@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
 
               if (permission && subLower.includes('menu') && subLower.includes('config')) return false
               
-              subMenu.children = subMenu.children?.filter((grandSubMenu: Menu) => {  
+              subMenu.children = subMenu.children?.filter((grandSubMenu: Menu) => {
                 if (grandSubMenu.permissions?.some(p => (sidebar ? p.role_id === user?.role.id : true) && grandSubMenu.is_active && grandSubMenu.deleted_date === null)) {
 
                   if (grandSubMenu.path) availMenu.push(grandSubMenu.path)
@@ -86,10 +86,7 @@ export async function POST(req: NextRequest) {
         data: {
           role_id: role.id!,
           menu_id: data.id,
-          create: true,
-          read: true,
-          update: true,
-          delete: true,
+          actions: data.features,
           created_by: user.id
         },
         include: {
@@ -106,10 +103,7 @@ export async function POST(req: NextRequest) {
         data: {
           role_id: roleAdmin.id!,
           menu_id: data.id,
-          create: true,
-          read: true,
-          update: true,
-          delete: true,
+          actions: data.features,
           created_by: user.id
         },
         include: {

@@ -7,7 +7,7 @@ import React from 'react'
 export default function useMenu() {
   const [open, setOpen] = React.useState(false)
   const [openDelete, setOpenDelete] = React.useState(false)
-  const [mode, setMode] = React.useState<'add' | 'edit' | 'view'>('view')
+  const [mode, setMode] = React.useState<ActionTable>('view')
   const [data, setData] = React.useState<Menu | null>(null)
   const [loading, setLoading] = React.useState(false)
   const { menus, setMenus, deleteMenu } = useMenuStore()
@@ -19,7 +19,7 @@ export default function useMenu() {
   const [order, setOrder] = React.useState<'asc' | 'desc'>('desc')
   const [orderBy, setOrderBy] = React.useState<keyof Menu>('created_date')
 
-  const handleClick = (body: Menu | null = null, modes: 'add' | 'edit' | 'view' | 'delete' = 'view') => {
+  const handleClick = (body: Menu | null = null, modes: ActionTable = 'view') => {
     setData(body)
     if (modes === 'delete') {
       setOpenDelete(true)

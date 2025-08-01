@@ -1,27 +1,31 @@
 import { Menu } from '@/types/menu'
 import EntityModal from '@/components/modal'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import {
   AlertColor,
   Autocomplete,
   Checkbox,
+  Chip,
+  FormControl,
   FormControlLabel,
+  FormHelperText,
   Stack,
   TextField,
 } from '@mui/material'
 import { menuSchema } from './schema'
 import { z } from 'zod'
 import useMenuStore from '@/store/menu'
-import { useEffect } from 'react'
+import React from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from '@/hooks/use-toast'
+import { COMMON_FEATURES } from '@/constant/enum'
+import { ActionTable } from '@/types/action'
 
 interface Props {
   open: boolean
   onClose: () => void
-  mode: 'add' | 'edit' | 'view'
+  mode: ActionTable
   initialData?: Partial<Menu>
-  menu: Menu[]
 }
 
 export default function MenuModal({
@@ -29,12 +33,14 @@ export default function MenuModal({
   onClose,
   mode,
   initialData,
-  menu,
 }: Props) {
+  const [menu, setMenu] = React.useState<Menu[]>([])
   const disabled = mode === 'view'
   const { addMenu, editMenu } = useMenuStore()
   
-  const { register, handleSubmit, reset, watch, setValue, formState: { errors, defaultValues } } = useForm<z.infer<typeof menuSchema>>({
+  const { handleSubmit, reset, control } = useForm<z.infer<typeof menuSchema>>({
+    mode: 'onBlur',
+    reValidateMode: 'onBlur',
     resolver: zodResolver(menuSchema),
     defaultValues: {
       name: '',
@@ -43,10 +49,18 @@ export default function MenuModal({
       icon: '',
       order: 0,
       is_active: true,
+      features: [],
     },
   })
   
-  useEffect(() => {
+  React.useEffect(() => {
+    const fetchData = async () => {
+      const res = await fetch('/api/menu?limit=10000')
+      const { data } = await res.json()
+      setMenu(data)
+    }
+
+    if (open) fetchData()
     reset({
       name: initialData?.name ?? '',
       path: initialData?.path ?? '',
@@ -54,11 +68,12 @@ export default function MenuModal({
       icon: initialData?.icon ?? '',
       order: initialData?.order ?? 0,
       is_active: initialData?.is_active ?? true,
+      features: initialData?.features ?? [],
     })
   }, [open, initialData, reset])
 
   const onSubmit = handleSubmit(async (body) => {
-    toast({ variant: 'info', description: 'Saving...' })
+    toast({ variant: 'info', description: 'Menyimpan...' })
     try {
       const url = mode === 'add' ? '/api/menu' : `/api/menu/${initialData?.id}`
       const res = await fetch(url, {
@@ -92,73 +107,143 @@ export default function MenuModal({
     >
       <form onSubmit={onSubmit} className='w-full flex justify-center'>
         <Stack spacing={2} className='w-130 flex' >
-          <TextField
-            variant='standard'
-            {...register('name')}
-            label="Name"
-            size='small'
-            disabled={disabled}
-            defaultValue={defaultValues!.name}
-            error={!!errors.name}
-            helperText={errors.name?.message}
-            required
+          <Controller
+            name='name'
+            control={control}
+            defaultValue={initialData?.name || ''}
+            render={({ field, fieldState }) => (
+              <TextField
+                {...field}
+                label="Name"
+                size='small'
+                disabled={disabled}
+                error={!!fieldState.error}
+                helperText={fieldState.error?.message}
+                required
+              />
+            )}
           />
 
-          <Autocomplete
-            disabled={disabled}
-            options={menu}
-            size='small'
-            getOptionLabel={(option) => option.name}
-            isOptionEqualToValue={(option, value) => option.id === value.id}
-            value={menu.find((m) => m.id === watch('parent_id')) || null}
-            onChange={(_, newValue) => {
-              setValue('parent_id', newValue?.id || null)
-            }}
-            renderInput={(params) => <TextField {...params} label="Parent" size='small' variant='standard' />}
+          <Controller
+            name="features"
+            control={control}
+            render={({ field }) => (
+              <Autocomplete
+                multiple
+                freeSolo
+                disabled={disabled}
+                options={COMMON_FEATURES}
+                value={field.value}
+                onChange={(_, newValue) => field.onChange(newValue)}
+                renderTags={(value, getTagProps) =>
+                  value.map((option, index) => (
+                    // eslint-disable-next-line react/jsx-key
+                    <Chip variant="outlined" label={option} {...getTagProps({ index })} />
+                  ))
+                }
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    size='small'
+                    label="Features"
+                  />
+                )}
+              />
+            )}
+          />
+
+          <Controller
+            name='parent_id'
+            control={control}
+            defaultValue={initialData?.parent_id || null}
+            render={({ field, fieldState }) => (
+              <FormControl>
+                <Autocomplete
+                  {...field}
+                  disabled={disabled}
+                  options={menu}
+                  size='small'
+                  getOptionLabel={(option) => option.name}
+                  isOptionEqualToValue={(option, value) => option.id === value.id}
+                  value={menu.find((m) => m.id === field.value) || null}
+                  onChange={(_, newValue) => field.onChange(newValue?.id || null)}
+                  renderInput={(params) => <TextField {...params} label="Parent" size='small' variant='standard' />}
+                />
+
+                <FormHelperText>{fieldState.error?.message}</FormHelperText>
+              </FormControl>
+            )}
           />
 
           <div className='grid grid-cols-2 gap-5'>
-            <TextField
-              variant='standard'
-              {...register('path')}
-              label="Path"
-              size='small'
-              defaultValue={defaultValues!.path}
-              disabled={disabled}
+            <Controller
+              name='path'
+              control={control}
+              defaultValue={initialData?.path || ''}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Path"
+                  size='small'
+                  disabled={disabled}
+                />
+              )}
             />
 
-            <TextField
-              variant='standard'
-              {...register('icon')}
-              label="Icon"
-              size='small'
-              defaultValue={defaultValues!.icon}
-              disabled={disabled}
+            <Controller
+              name='icon'
+              control={control}
+              defaultValue={initialData?.icon || ''}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Icon"
+                  size='small'
+                  disabled={disabled}
+                />
+              )}
             />
           </div>
 
           <div className='grid grid-cols-2 gap-5'>
-            <TextField
-              variant='standard'
-              type="number"
-              {...register('order', { valueAsNumber: true })}
-              label="Order"
-              size='small'
-              defaultValue={defaultValues!.order}
-              disabled={disabled}
+            <Controller
+              name='order'
+              control={control}
+              defaultValue={initialData?.order || 0}
+              render={({ field, fieldState }) => (
+                <TextField
+                  {...field}
+                  type="number"
+                  label="Order"
+                  size='small'
+                  disabled={disabled}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    field.onChange(value === '' ? '' : Number(value)); 
+                  }}
+                  error={!!fieldState.error}
+                  helperText={fieldState.error?.message}
+                />
+              )}
             />
 
-            <FormControlLabel
-              className='bg-red'
-              control={
-                <Checkbox
-                  {...register('is_active')}
-                  disabled={disabled}
-                  checked={watch('is_active')}
-                  onChange={(e) => setValue('is_active', e.target.checked)}
+            <Controller
+              name='is_active'
+              control={control}
+              defaultValue={initialData?.is_active || true}
+              render={({ field }) => (
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      {...field}
+                      disabled={disabled}
+                      checked={field.value}
+                      onChange={(e) => field.onChange(e.target.checked)}
+                    />
+                  }
+                  label="Active"
                 />
-              }
-              label="Active"
+              )}
             />
           </div>
         </Stack>

@@ -7,7 +7,6 @@ import { useAuth } from "@/context/auth-context"
 import { usePermission } from "@/hooks/use-permission"
 import { TableColumn } from "@/types/column"
 import { Menu } from "@/types/menu"
-import { convertAction } from "@/utils/helper"
 import { Button, Icon, IconButton, Tooltip } from "@mui/material"
 import React from "react"
 import useMenu from "./hooks"
@@ -58,7 +57,7 @@ export default function Page() {
   }, [search, page, rowsPerPage, order, orderBy])
 
   React.useEffect(() => {
-    if (permission) setAction(convertAction(permission))
+    if (permission.length) setAction(permission)
   }, [user])
 
   return (
@@ -91,7 +90,7 @@ export default function Page() {
                   <Icon>refresh</Icon>
                 </IconButton>
               </Tooltip>
-              {permission?.create && 
+              {permission.includes('add') && 
                 <Button onClick={() => handleClick(null, 'add')}>
                   New
                 </Button>
@@ -123,7 +122,7 @@ export default function Page() {
         open={openDelete}
         setOpen={setOpenDelete}
       />
-      <MenuModal open={open} mode={mode} onClose={() => setOpen(false)} initialData={data!} menu={menus} />
+      <MenuModal open={open} mode={mode} onClose={() => setOpen(false)} initialData={data!} />
     </>
   )
 }

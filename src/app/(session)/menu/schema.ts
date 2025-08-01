@@ -7,4 +7,5 @@ export const menuSchema = z.object({
     parent_id: z.string().nullable(),
     order: z.number(),
     is_active: z.boolean(),
+    features: z.array(z.string()),
 })
