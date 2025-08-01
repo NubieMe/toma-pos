@@ -3,6 +3,7 @@ export type Item = {
   code: string
   name: string
   description?: string
+  vendible: boolean
   uom_id: string
   category_id: string
   uom: {
@@ -18,4 +19,14 @@ export type Item = {
   }
   created_date: Date
   updated_date?: Date
+}
+
+export type ItemBody = {
+  code?: string
+  name: string
+  description?: string
+  vendible: boolean
+  uom_id: string
+  category_id: string
+  price?: number
 }

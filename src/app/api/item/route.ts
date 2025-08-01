@@ -1,8 +1,10 @@
 import { ResponseError } from "@/lib/error/response-error";
 import { prisma } from "@/lib/prisma";
 import { getCompany } from "@/repositories/company.server";
+import { createManyStock } from "@/repositories/stock.server";
 import { ServiceFactory } from "@/services/service-factory";
 import { Session } from "@/types/session";
+import { Stock, StockBody } from "@/types/stock";
 import { errorHandler } from "@/utils/helper";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -11,7 +13,7 @@ export async function POST(req: NextRequest) {
     const date = new Date()
     const year = date.getFullYear()
     const month = date.getMonth()
-    const body = await req.json();
+    const { price = 0, ...body } = await req.json();
     const user = JSON.parse(req.headers.get('x-user-payload')!) as Session
     const company = await getCompany()
     
@@ -31,9 +33,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: "Category tidak ditemukan "}, { status: 404 })
     }
 
-    let data
-    if (company.item_auto) {
-      data = await prisma.$transaction(async tx => {
+    const data = await prisma.$transaction(async tx => {
+      let created: Stock;
+      if (company.item_auto) {
         const codeParts: string[] = []
         const format = {
           hasYear: false,
@@ -75,17 +77,33 @@ export async function POST(req: NextRequest) {
           const len = codeParts[format.seqIndex].length
           codeParts[format.seqIndex] = seq.number.toString().padStart(len, '0')
         }
-        
+
         body.code = codeParts.join(company.item_separator ?? '')
 
-        const created = await ServiceFactory.create('item', body, user.id, undefined, tx)
+        created = await ServiceFactory.create('item', body, user.id, undefined, tx)
         await ServiceFactory.updateSequence(seq.id, { number: seq.number, year: seq.year }, tx)
 
-        return created
-      })
-    } else {
-      data = await ServiceFactory.create('item', body, user.id)
-    }
+      } else {
+        created = await ServiceFactory.create('item', body, user.id, undefined, tx)
+      }
+
+      const params = new URLSearchParams()
+      params.append('limit', '100000')
+
+      const branches = await ServiceFactory.getAll('branch', params)
+      const stockBody: StockBody[] = branches.data.map((b: Stock) => ({
+        branch_id: b.id,
+        item_id: created.id,
+        price: created.vendible ? price : 0,
+        qty: 0,
+        vendible: created.vendible,
+        created_by: user.id,
+      }))
+
+      await createManyStock(stockBody, tx)
+
+      return created
+    })
 
     return NextResponse.json({
       message: "Item berhasil ditambahkan",
