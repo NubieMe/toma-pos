@@ -19,7 +19,7 @@ export default function DashboardLayout({
       <Sidebar />
 
       {/* Konten Utama di Kanan */}
-      <div className="flex flex-col flex-grow">
+      <div className="flex flex-col flex-grow min-w-0">
         {/* 1. Header yang baru dibuat diletakkan di sini */}
         <Header />
 
