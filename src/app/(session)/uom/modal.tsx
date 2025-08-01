@@ -12,11 +12,12 @@ import useUomStore from '@/store/uom'
 import { useEffect } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from '@/hooks/use-toast'
+import { ActionTable } from '@/types/action'
 
 interface Props {
   open: boolean
   onClose: () => void
-  mode: 'add' | 'edit' | 'view'
+  mode: ActionTable
   initialData?: Partial<Uom>
 }
 
@@ -78,7 +79,7 @@ export default function UomModal({
       onClose={onClose}
       onSubmit={onSubmit}
       mode={mode}
-      title={`${mode[0].toUpperCase() + mode.slice(1)} UOM`}
+      title={`${mode} UOM`}
     >
       <form onSubmit={onSubmit}>
         <Stack spacing={2}>

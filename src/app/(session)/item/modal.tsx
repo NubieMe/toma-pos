@@ -1,9 +1,13 @@
-import { Item } from '@/types/item'
+import { Item, ItemBody } from '@/types/item'
 import EntityModal from '@/components/modal'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import {
   AlertColor,
   Autocomplete,
+  Checkbox,
+  FormControl,
+  FormControlLabel,
+  FormHelperText,
   // Checkbox,
   // FormControlLabel,
   Stack,
@@ -17,11 +21,13 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from '@/hooks/use-toast'
 import { Category, Uom } from '@prisma/client'
 import { useCompany } from '@/hooks/use-company'
+import { convertNumber, parseNumber } from '@/utils/helper'
+import { ActionTable } from '@/types/action'
 
 interface Props {
   open: boolean
   onClose: () => void
-  mode: 'add' | 'edit' | 'view'
+  mode: ActionTable
   initialData?: Partial<Item>
 }
 
@@ -31,13 +37,16 @@ export default function ItemModal({
   mode,
   initialData,
 }: Props) {
+  const [displayPrice, setDisplayPrice] = React.useState('')
   const [uoms, setUoms] = React.useState<Uom[]>([])
   const [categories, setCategories] = React.useState<Category[]>([])
   const disabled = mode === 'view'
   const { addItem, editItem } = useItemStore()
   const { company, fetchCompany } = useCompany()
   
-  const { register, handleSubmit, reset, watch, setValue, formState: { errors, defaultValues } } = useForm<z.infer<typeof itemSchema>>({
+  const { handleSubmit, reset, watch, control } = useForm<z.infer<typeof itemSchema>>({
+    mode: 'onBlur',
+    reValidateMode: 'onBlur',
     resolver: zodResolver(itemSchema),
     defaultValues: {
       name: '',
@@ -45,14 +54,16 @@ export default function ItemModal({
       description: '',
       uom_id: '',
       category_id: '',
+      vendible: false,
+      price: 0,
     },
   })
 
   React.useEffect(() => {
     const fetchData = async () => {
       const [uomRes, categoryRes] = await Promise.all([
-        fetch('/api/uom').then(res => res.json()),
-        fetch('/api/category').then(res => res.json()),
+        fetch('/api/uom?limit=10000').then(res => res.json()),
+        fetch('/api/category?limit=10000').then(res => res.json()),
       ])
 
       setUoms(uomRes.data)
@@ -63,24 +74,35 @@ export default function ItemModal({
   }, [])
   
   React.useEffect(() => {
-    fetchCompany()
+    if (open) fetchCompany()
     reset({
       name: initialData?.name ?? '',
       code: initialData?.code ?? '',
       description: initialData?.description ?? '',
       uom_id: initialData?.uom_id ?? '',
       category_id: initialData?.category_id ?? '',
+      vendible: initialData?.vendible ?? false,
+      price: 0,
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initialData, reset])
 
   const onSubmit = handleSubmit(async (body) => {
-    toast({ variant: 'info', description: 'Saving...' })
+    toast({ variant: 'info', description: 'Menyimpan...' })
     try {
-      const url = mode === 'add' ? '/api/item' : `/api/item/${initialData?.id}`
+      let sentBody: ItemBody = body;
+      let url = '/api/item', method = 'POST';
+      if (mode === 'edit') {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { price, ...rest } = body
+        sentBody = rest
+        url += `/${initialData?.id}`
+        method = 'PATCH'
+      }
+
       const res = await fetch(url, {
-        method: mode === 'add' ? 'POST' : 'PATCH',
-        body: JSON.stringify(body),
+        method,
+        body: JSON.stringify(sentBody),
       })
       const parsed = await res.json()
   
@@ -105,69 +127,147 @@ export default function ItemModal({
       onClose={onClose}
       onSubmit={onSubmit}
       mode={mode}
-      title={`${mode[0].toUpperCase() + mode.slice(1)} Item`}
+      title={`${mode} Item`}
     >
       <form onSubmit={onSubmit} className='w-full flex justify-center'>
         <Stack spacing={2} className='w-130 flex' >
-          <TextField
-            {...register('name')}
-            label="Name"
-            size='small'
-            disabled={disabled}
-            defaultValue={defaultValues!.name}
-            error={!!errors.name}
-            helperText={errors.name?.message}
-            required
+          <Controller
+            name='name'
+            control={control}
+            defaultValue={initialData?.name || ''}
+            render={({ field, fieldState }) => (
+              <TextField
+                {...field}
+                label="Name"
+                size='small'
+                disabled={disabled}
+                error={!!fieldState.error}
+                helperText={fieldState.error?.message}
+                required
+              />
+            )}
           />
 
-          <TextField
-            {...register('code')}
-            label={`Code${company?.item_auto ? ' (Auto-Generate)' : ''}`}
-            size='small'
-            disabled={disabled}
-            defaultValue={defaultValues!.name}
-            error={!!errors.name}
-            helperText={errors.name?.message}
-            required={!company?.item_auto}
+          <Controller
+            name='code'
+            control={control}
+            defaultValue={initialData?.code || ''}
+            render={({ field, fieldState }) => (
+              <TextField
+                {...field}
+                label={`Code${company?.item_auto ? ' (Auto-Generate)' : ''}`}
+                size='small'
+                disabled={disabled || company?.item_auto}
+                error={!!fieldState.error}
+                helperText={fieldState.error?.message}
+                required={!company?.item_auto}
+              />
+            )}
           />
 
-          <Autocomplete
-            disabled={disabled}
-            options={categories}
-            size='small'
-            getOptionLabel={(option) => option.name}
-            isOptionEqualToValue={(option, value) => option.id === value.id}
-            value={categories.find((c) => c.id === watch('category_id')) || null}
-            onChange={(_, newValue) => {
-              setValue('category_id', newValue?.id || '')
-            }}
-            renderInput={(params) => <TextField {...params} label="Category" size='small' variant='standard' />}
+          <Controller
+            name='category_id'
+            control={control}
+            defaultValue={initialData?.category_id || ''}
+            render={({ field, fieldState }) => (
+              <FormControl>
+                <Autocomplete
+                  disabled={disabled}
+                  options={categories}
+                  size='small'
+                  getOptionLabel={(option) => option.name}
+                  isOptionEqualToValue={(option, value) => option.id === value.id}
+                  value={categories.find((c) => c.id === field.value) || null}
+                  onChange={(_, newValue) => field.onChange(newValue || '')}
+                  renderInput={(params) => <TextField {...params} label="Category" size='small' />}
+                />
+  
+                <FormHelperText>{fieldState.error?.message}</FormHelperText>
+              </FormControl>
+            )}
           />
 
-          <Autocomplete
-            disabled={disabled}
-            options={uoms}
-            size='small'
-            getOptionLabel={(option) => option.name}
-            isOptionEqualToValue={(option, value) => option.id === value.id}
-            value={uoms.find((u) => u.id === watch('uom_id')) || null}
-            onChange={(_, newValue) => {
-              setValue('uom_id', newValue?.id || '')
-            }}
-            renderInput={(params) => <TextField {...params} label="UOM" size='small' variant='standard' />}
+          <Controller
+            name='uom_id'
+            control={control}
+            defaultValue={initialData?.uom_id || ''}
+            render={({ field, fieldState }) => (
+              <FormControl>
+                <Autocomplete
+                  disabled={disabled}
+                  options={uoms}
+                  size='small'
+                  getOptionLabel={(option) => option.name}
+                  isOptionEqualToValue={(option, value) => option.id === value.id}
+                  value={uoms.find((u) => u.id === field.value) || null}
+                  onChange={(_, newValue) => field.onChange(newValue || '')}
+                  renderInput={(params) => <TextField {...params} label="UOM" size='small' />}
+                />
+  
+                <FormHelperText>{fieldState.error?.message}</FormHelperText>
+              </FormControl>
+            )}
           />
 
-          <TextField
-            {...register('description')}
-            label="Description"
-            size='small'
-            disabled={disabled}
-            defaultValue={defaultValues!.description}
-            error={!!errors.description}
-            helperText={errors.description?.message}
-            multiline
-            rows={3}
+          <Controller
+            name='description'
+            control={control}
+            defaultValue={initialData?.description || ''}
+            render={({ field, fieldState }) => (
+              <TextField
+                {...field}
+                label="Description"
+                size='small'
+                disabled={disabled}
+                error={!!fieldState.error}
+                helperText={fieldState.error?.message}
+                multiline
+                rows={3}
+              />
+            )}
           />
+
+          <Controller
+            name='vendible'
+            control={control}
+            defaultValue={initialData?.vendible || false}
+            render={({ field }) => (
+              <FormControlLabel
+                label='Untuk Dijual?'
+                control={
+                  <Checkbox
+                    {...field}
+                    checked={field.value}
+                    onChange={e => field.onChange(e.target.checked)}
+                  />
+                }
+              />
+            )}
+          />
+
+          {mode === 'add' && watch('vendible') && (
+            <Controller
+              name='price'
+              control={control}
+              defaultValue={0}
+              render={({ field, fieldState }) => (
+                <TextField
+                  {...field}
+                  label="Price"
+                  size='small'
+                  value={displayPrice}
+                  error={!!fieldState.error}
+                  helperText={fieldState.error?.message}
+                  onChange={e => {
+                    field.onChange(parseNumber(e.target.value));
+                    const formatted = convertNumber(e.target.value);
+  
+                    setDisplayPrice(formatted)
+                  }}
+                />
+              )}
+            />
+          )}
 
           {/* <div className='grid grid-cols-2 gap-5'>
             <TextField

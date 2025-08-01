@@ -9,7 +9,6 @@ import { format } from 'date-fns'
 import CategoryModal from './modal'
 import AlertDialog from '@/components/ui/alert'
 import { usePermission } from '@/hooks/use-permission'
-import { convertAction } from '@/utils/helper'
 import { Button } from '@mui/material'
 import { useAuth } from '@/context/auth-context'
 import useCategory from './hooks'
@@ -57,7 +56,7 @@ export default function Page() {
   }, [page, rowsPerPage, order, orderBy, search])
 
   React.useEffect(() => {
-    if (permission) setAction(convertAction(permission!))
+    if (permission.length) setAction(permission)
   }, [user])
 
   return (
@@ -79,7 +78,7 @@ export default function Page() {
               value={search}
               setValue={setSearch}
               />
-            {permission?.create && <Button onClick={() => handleClick(null, 'add')}>
+            {permission.includes('add') && <Button onClick={() => handleClick(null, 'add')}>
               New
             </Button>}
           </div>

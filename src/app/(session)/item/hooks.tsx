@@ -7,7 +7,7 @@ import React from 'react'
 export default function useItem() {
   const [open, setOpen] = React.useState(false)
   const [openDelete, setOpenDelete] = React.useState(false)
-  const [mode, setMode] = React.useState<'add' | 'edit' | 'view'>('view')
+  const [mode, setMode] = React.useState<ActionTable>('view')
   const [data, setData] = React.useState<Item | null>(null)
   const [loading, setLoading] = React.useState(false)
   const { items, setItems, deleteItem } = useItemStore()
@@ -19,7 +19,7 @@ export default function useItem() {
   const [order, setOrder] = React.useState<'asc' | 'desc'>('desc')
   const [orderBy, setOrderBy] = React.useState<keyof Item>('created_date')
 
-  const handleClick = (body: Item | null = null, modes: 'add' | 'edit' | 'view' | 'delete' = 'view') => {
+  const handleClick = (body: Item | null = null, modes: ActionTable = 'view') => {
     setData(body)
     if (modes === 'delete') {
       setOpenDelete(true)

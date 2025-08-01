@@ -8,7 +8,6 @@ import { format } from 'date-fns'
 import RoleModal from './modal'
 import AlertDialog from '@/components/ui/alert'
 import { usePermission } from '@/hooks/use-permission'
-import { convertAction } from '@/utils/helper'
 import { Button } from '@mui/material'
 import useRole from './hooks'
 import { useAuth } from '@/context/auth-context'
@@ -51,7 +50,7 @@ export default function Page() {
   ]
 
   React.useEffect(() => {
-    if (permission) setAction(convertAction(permission!))
+    if (permission.length) setAction(permission)
   }, [user])
 
   React.useEffect(() => {
@@ -77,7 +76,7 @@ export default function Page() {
               value={search}
               setValue={setSearch}
             />
-            {permission?.create && 
+            {permission.includes('add') && 
               <Button onClick={() => handleClick(null, 'add')}>
                 New
               </Button>

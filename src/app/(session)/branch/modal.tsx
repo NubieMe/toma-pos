@@ -13,11 +13,12 @@ import React from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from '@/hooks/use-toast'
 import MapPicker from '@/components/map-picker'
+import { ActionTable } from '@/types/action'
 
 interface Props {
   open: boolean
   onClose: () => void
-  mode: 'add' | 'edit' | 'view'
+  mode: ActionTable
   initialData?: Partial<Branch>
 }
 
@@ -83,7 +84,7 @@ export default function BranchModal({
       onClose={onClose}
       onSubmit={onSubmit}
       mode={mode}
-      title={`${mode[0].toUpperCase() + mode.slice(1)} Branch`}
+      title={`${mode} Branch`}
     >
       <form onSubmit={onSubmit}>
         <Stack spacing={2}>

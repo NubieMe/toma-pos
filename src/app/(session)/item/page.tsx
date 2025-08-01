@@ -7,7 +7,6 @@ import { useAuth } from "@/context/auth-context"
 import { usePermission } from "@/hooks/use-permission"
 import { TableColumn } from "@/types/column"
 import { Item } from "@/types/item"
-import { convertAction } from "@/utils/helper"
 import { Button, Icon, IconButton, Tooltip } from "@mui/material"
 import React from "react"
 import useItem from "./hooks"
@@ -58,7 +57,7 @@ export default function Page() {
   }, [search, page, rowsPerPage, order, orderBy])
 
   React.useEffect(() => {
-    if (permission) setAction(convertAction(permission))
+    if (permission.length) setAction(permission)
   }, [user])
 
   return (
@@ -91,7 +90,7 @@ export default function Page() {
                   <Icon>refresh</Icon>
                 </IconButton>
               </Tooltip>
-              {permission?.create && 
+              {permission.includes('add') && 
                 <Button onClick={() => handleClick(null, 'add')}>
                   New
                 </Button>

@@ -7,7 +7,6 @@ import { TableColumn } from '@/types/column'
 import { Branch } from '@/types/branch'
 import React from 'react'
 import useBranch from './hooks'
-import { convertAction } from '@/utils/helper'
 import Search from '@/components/table/search'
 import { Button } from '@mui/material'
 import AlertDialog from '@/components/ui/alert'
@@ -56,7 +55,7 @@ export default function Page() {
   }, [page, rowsPerPage, order, orderBy, search])
   
   React.useEffect(() => {
-    if (permission) setAction(convertAction(permission!))
+    if (permission.length) setAction(permission)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
 
@@ -79,7 +78,7 @@ export default function Page() {
               value={search}
               setValue={setSearch}
               />
-            {permission?.create && <Button onClick={() => handleClick(null, 'add')}>
+            {permission.includes('add') && <Button onClick={() => handleClick(null, 'add')}>
               New
             </Button>}
           </div>

@@ -12,11 +12,12 @@ import useRoleStore from '@/store/role'
 import { useEffect } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from '@/hooks/use-toast'
+import { ActionTable } from '@/types/action'
 
 interface Props {
   open: boolean
   onClose: () => void
-  mode: 'add' | 'edit' | 'view'
+  mode: ActionTable
   initialData?: Partial<Role>
 }
 
@@ -77,7 +78,7 @@ export default function RoleModal({
       onClose={onClose}
       onSubmit={onSubmit}
       mode={mode}
-      title={`${mode[0].toUpperCase() + mode.slice(1)} Role`}
+      title={`${mode} Role`}
     >
       <form onSubmit={onSubmit}>
         <Stack spacing={2}>

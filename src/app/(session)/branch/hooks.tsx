@@ -9,7 +9,7 @@ export default function useBranch() {
   const [total, setTotal] = React.useState(0)
   const [open, setOpen] = React.useState(false)
   const [openDelete, setOpenDelete] = React.useState(false)
-  const [mode, setMode] = React.useState<'add' | 'edit' | 'view'>('view')
+  const [mode, setMode] = React.useState<ActionTable>('view')
   const [data, setData] = React.useState<Branch | null>(null)
   const [loading, setLoading] = React.useState(false)
   const [action, setAction] = React.useState<ActionTable[]>([])
@@ -19,7 +19,7 @@ export default function useBranch() {
   const [order, setOrder] = React.useState<'asc' | 'desc'>('desc')
   const [orderBy, setOrderBy] = React.useState<keyof Branch>('created_date')
 
-  const fetchBranches = async () => {
+  const fetchBranches = async (setValue?: (values: Branch[]) => void) => {
     setLoading(true)
     try {
       let url = `/api/branch?page=${page + 1}&limit=${rowsPerPage}&order=${orderBy}-${order}`
@@ -30,9 +30,13 @@ export default function useBranch() {
       const res = await fetch(url)
       const { data, total } = await res.json()
 
-      setBranches(data)
-      setData(data)
-      setTotal(total)
+      if (setValue) {
+        setValue(data)
+      } else {
+        setBranches(data)
+        setData(data)
+        setTotal(total)
+      }
     } catch (error) {
       console.error('Error loading branches', error)
     } finally {
@@ -40,7 +44,7 @@ export default function useBranch() {
     }
   }
 
-  const handleClick = (body: Branch | null, mode: 'add' | 'edit' | 'view' | 'delete' = 'view') => {
+  const handleClick = (body: Branch | null, mode: ActionTable = 'view') => {
     setData(body)
     if (mode === 'delete') {
       setOpenDelete(true)

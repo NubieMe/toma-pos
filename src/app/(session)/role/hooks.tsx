@@ -8,7 +8,7 @@ export default function useRole() {
   const [open, setOpen] = React.useState(false)
   const [openDelete, setOpenDelete] = React.useState(false)
   const [loading, setLoading] = React.useState(false)
-  const [mode, setMode] = React.useState<'add' | 'edit' | 'view'>('view')
+  const [mode, setMode] = React.useState<ActionTable>('view')
   const [data, setData] = React.useState<Role | null>(null)
   const [action, setAction] = React.useState<ActionTable[]>([])
   const [search, setSearch] = React.useState('')
@@ -40,7 +40,7 @@ export default function useRole() {
     }
   }
 
-  const handleClick = (body: Role | null, mode: 'add' | 'edit' | 'view' | 'delete' = 'view') => {
+  const handleClick = (body: Role | null, mode: ActionTable = 'view') => {
     setData(body)
     if (mode === 'delete') {
       setOpenDelete(true)

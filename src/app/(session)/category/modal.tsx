@@ -13,11 +13,12 @@ import React from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from '@/hooks/use-toast'
 import { useCompany } from '@/hooks/use-company'
+import { ActionTable } from '@/types/action'
 
 interface Props {
   open: boolean
   onClose: () => void
-  mode: 'add' | 'edit' | 'view'
+  mode: ActionTable
   initialData?: Partial<Category>
 }
 
@@ -32,11 +33,10 @@ export default function CategoryModal({
   const { company, fetchCompany } = useCompany()
 
   const activeSchema = React.useMemo(() => {
-    // Jika category_auto bernilai false, gunakan skema yang mewajibkan 'code'
     if (company?.category_auto === false) {
       return categoryWithCodeSchema
     }
-    // Jika true atau masih loading (undefined), gunakan skema default dimana 'code' opsional
+
     return categorySchema
   }, [company?.category_auto])
 
@@ -50,7 +50,7 @@ export default function CategoryModal({
   })
   
   React.useEffect(() => {
-    fetchCompany()
+    if (open) fetchCompany()
     reset({
       name: initialData?.name || '',
       code: initialData?.code || '',
@@ -93,7 +93,7 @@ export default function CategoryModal({
       onClose={onClose}
       onSubmit={onSubmit}
       mode={mode}
-      title={`${mode[0].toUpperCase() + mode.slice(1)} Category`}
+      title={`${mode} Category`}
     >
       <form onSubmit={onSubmit}>
         <Stack spacing={2}>

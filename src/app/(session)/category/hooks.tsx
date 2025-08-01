@@ -9,7 +9,7 @@ export default function useCategory() {
   const [total, setTotal] = React.useState(0)
   const [open, setOpen] = React.useState(false)
   const [openDelete, setOpenDelete] = React.useState(false)
-  const [mode, setMode] = React.useState<'add' | 'edit' | 'view'>('view')
+  const [mode, setMode] = React.useState<ActionTable>('view')
   const [data, setData] = React.useState<Category | null>(null)
   const [loading, setLoading] = React.useState(false)
   const [action, setAction] = React.useState<ActionTable[]>([])
@@ -19,7 +19,7 @@ export default function useCategory() {
   const [order, setOrder] = React.useState<'asc' | 'desc'>('desc')
   const [orderBy, setOrderBy] = React.useState<keyof Category>('created_date')
   
-  const handleClick = (body: Category | null, mode: 'add' | 'edit' | 'view' | 'delete' = 'view') => {
+  const handleClick = (body: Category | null, mode: ActionTable = 'view') => {
     setData(body)
     if (mode === 'delete') {
       setOpenDelete(true)
