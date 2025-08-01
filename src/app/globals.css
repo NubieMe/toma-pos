@@ -28,3 +28,8 @@ body {
   color: var(--foreground);
   font-family: "Poppins", sans-serif;
 }
+
+/* Style untuk input dan hasil pencarian */
+.leaflet-control-geosearch {
+  color: #171717;
+}
