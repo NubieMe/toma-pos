@@ -37,7 +37,8 @@ export class ServiceFactory {
     body: any,
     userId: string,
     schema?: ZodType<any>,
-    tx?: Prisma.TransactionClient
+    tx?: Prisma.TransactionClient,
+    include?: Prisma.Args<PrismaClient[T], 'update'>['include']
   ) {
     const data = schema ? validate(schema, body) : body
     const delegate = getModel(model, tx) as any
@@ -49,6 +50,7 @@ export class ServiceFactory {
     return await delegate.update({
       where: { id },
       data,
+      include,
     })
   }
 
@@ -73,8 +75,25 @@ export class ServiceFactory {
 
     const where: Prisma.Args<PrismaClient[T], 'findMany'>['where'] = { deleted_date: null }
     Object.keys(search).forEach(key => {
+      const dot = key.includes('.')
+
       if (Array.isArray(search[key])) {
-        where[key] = { in: search[key] }
+        if (dot) {
+          const fields = key.split('.');
+          const lastField = fields.pop()!;
+
+          let currentLevel = where;
+          for (const field of fields) {
+            if (!currentLevel[field]) {
+              currentLevel[field] = {};
+            }
+            currentLevel = currentLevel[field];
+          }
+
+          currentLevel[lastField] = { in: search[key] };
+        } else {
+          where[key] = { in: search[key] }
+        }
       } else if (key.endsWith('_id')) {
         where[key] = search[key]
       } else if (key.includes('-')) {
@@ -82,8 +101,8 @@ export class ServiceFactory {
 
         where.OR = fields.map(f => ({ [f]: { contains: search[key] } }))
 
-      } else if (search[key] === 'true' || search[key] === 'false') {
-        where[key] = search[key] === 'true'
+      } else if (typeof search[key] === 'boolean') {
+        where[key] = search[key]
       } else if (key === 'start_date') {
         if (where['created_date']) where['created_date'] = { ...where['created_date'], gte: search[key] }
         else where['created_date'] = { gte: search[key] }
@@ -96,7 +115,7 @@ export class ServiceFactory {
         where[key] = { contains: search[key] }
       }
     })
-    
+
     const delegate = getModel(model) as any
 
     const [total, data] = await Promise.all([
