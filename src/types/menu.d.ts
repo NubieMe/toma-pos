@@ -1,4 +1,4 @@
-import { Permission } from "@prisma/client"
+import { Permission } from "./permission"
 
 export interface IMenu
   extends Record<
@@ -12,6 +12,7 @@ export interface IMenu
   parent_id?: string | null
   is_active?: boolean
   children?: IMenu[] | null
+  features?: ActionTable[]
 }
 
 export type Menu = {
@@ -25,6 +26,7 @@ export type Menu = {
   permissions?: Permission[]
   order: number
   is_active: boolean
+  features: ActionTable[]
   created_date: Date
   updated_date?: Date
   deleted_date: Date | null

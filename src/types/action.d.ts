@@ -1,3 +1,5 @@
+import { COMMON_FEATURES } from "@/constant/enum"
+
 export type Action = {
     create: boolean
     read: boolean
@@ -5,4 +7,4 @@ export type Action = {
     delete: boolean
 }
 
-export type ActionTable = 'view' | 'edit' | 'delete'
+export type ActionTable = (typeof COMMON_FEATURES)[number]
