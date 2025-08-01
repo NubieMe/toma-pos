@@ -8,4 +8,7 @@ export type Session = {
     profile: {
         picture: string | null;
     }
+    branch: {
+        id: string | null;
+    }
 }
