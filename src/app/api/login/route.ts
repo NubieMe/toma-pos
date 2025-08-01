@@ -26,6 +26,9 @@ export async function POST(req: NextRequest) {
     },
     profile: {
       picture: user.profile?.picture || null
+    },
+    branch: {
+      id: user.branch?.id || null
     }
   }
 

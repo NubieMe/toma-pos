@@ -42,13 +42,9 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
-    const data = await ServiceFactory.getAll('user', req.nextUrl.searchParams)
+    const { data, total } = await ServiceFactory.getAll('user', req.nextUrl.searchParams)
 
-    if (!data) {
-      return NextResponse.json({ message: 'User tidak ditemukan' }, { status: 404 })
-    }
-
-    return NextResponse.json({ data })
+    return NextResponse.json({ data, total })
   } catch (error) {
     return errorHandler(error as ResponseError)
   }
