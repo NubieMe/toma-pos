@@ -23,6 +23,7 @@ export const getUserByUsername = async (username: string) => {
         include: {
             role: true,
             profile: true,
+            branch: true
         }
     });
 }

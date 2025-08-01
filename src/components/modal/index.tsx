@@ -11,14 +11,13 @@ import {
   Typography,
 } from '@mui/material'
 import CloseIcon from '@mui/icons-material/Close'
-
-type Mode = 'add' | 'edit' | 'view'
+import { ActionTable } from '@/types/action'
 
 interface EntityModalProps {
   open: boolean
   onClose: () => void
   title?: string
-  mode?: Mode
+  mode?: ActionTable
   children: React.ReactNode
   onSubmit?: () => void
 }
@@ -42,7 +41,7 @@ export default function EntityModal({
   return (
     <Dialog open={open} onClose={onClose} fullWidth>
       <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '3.5rem' }}>
-        <Typography>{getTitle()}</Typography>
+        <Typography className='capitalize'>{getTitle()}</Typography>
         <IconButton onClick={onClose}>
           <CloseIcon />
         </IconButton>
