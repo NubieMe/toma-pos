@@ -6,6 +6,9 @@ import { AuthProvider } from '@/context/auth-context';
 import { ToastProvider } from '@/components/provider/toast';
 import { useTheme } from 'next-themes';
 import React from 'react';
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { id } from 'date-fns/locale';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const { resolvedTheme } = useTheme();
@@ -26,11 +29,13 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <ThemeProvider theme={muiTheme}>
-      <CssBaseline />
-      <AuthProvider>
-        <ToastProvider />
-        {children}
-      </AuthProvider>
+      <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={id}>
+        <CssBaseline />
+        <AuthProvider>
+          <ToastProvider />
+          {children}
+        </AuthProvider>
+      </LocalizationProvider>
     </ThemeProvider>
   );
 }
