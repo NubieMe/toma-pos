@@ -1,6 +1,5 @@
 import EntityModal from '@/components/modal'
 import { toast } from '@/hooks/use-toast'
-import useStockStore from '@/store/stock'
 import { convertNumber, parseNumber } from '@/utils/helper'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
@@ -18,21 +17,29 @@ import useBranch from '../../app/(session)/branch/hooks'
 import useItem from '../../app/(session)/item/hooks'
 import { stockIOSchema } from '../../app/(session)/product/schema'
 import { IOType } from '@prisma/client'
+import { StockIO } from '@/types/stock'
 
 interface Props {
   open: boolean
   onClose: () => void
   options: Partial<IOType>[]
+  title: string
+  branchId?: string
+  disabledBranch?: boolean
+  afterSubmit?: (io: StockIO) => void
 }
 
 export default function StockIOModal({
   open,
   onClose,
   options,
+  title,
+  branchId,
+  disabledBranch = false,
+  afterSubmit,
 }: Props) {
   const [displayQty, setDisplayQty] = React.useState('0')
   const [displayPrice, setDisplayPrice] = React.useState('0')
-  const { editStock } = useStockStore()
   const { items, fetchItems } = useItem()
   const { branches, fetchBranches } = useBranch()
 
@@ -42,9 +49,9 @@ export default function StockIOModal({
     reValidateMode: 'onBlur',
     defaultValues: {
       item_id: '',
-      branch_id: '',
+      branch_id: branchId || '',
       to_id: '',
-      type: undefined,
+      type: options.length === 1 ? options[0] : undefined,
       price: 0,
       qty: 0,
       note: '',
@@ -57,9 +64,9 @@ export default function StockIOModal({
 
     reset({
       item_id: '',
-      branch_id: '',
+      branch_id: branchId || '',
       to_id: '',
-      type: undefined,
+      type: options.length === 1 ? options[0] : undefined,
       price: 0,
       qty: 0,
       note: '',
@@ -78,7 +85,7 @@ export default function StockIOModal({
 
       let variant: AlertColor = 'warning'
       if (parsed) {
-        editStock(parsed.data)
+        if (afterSubmit) afterSubmit(parsed.data)
 
         variant = 'success'
       }
@@ -99,7 +106,7 @@ export default function StockIOModal({
       onClose={onClose}
       onSubmit={onSubmit}
       mode={'add'}
-      title={`Add Stock`}
+      title={title}
     >
       <form onSubmit={onSubmit}>
         <Stack spacing={2}>
@@ -127,7 +134,6 @@ export default function StockIOModal({
           <Controller
             name='branch_id'
             control={control}
-            defaultValue=''
             render={({ field, fieldState }) => (
               <FormControl>
                 <Autocomplete
@@ -148,10 +154,10 @@ export default function StockIOModal({
           <Controller
             name='type'
             control={control}
-            defaultValue={undefined}
             render={({ field, fieldState }) => (
               <FormControl>
                 <Autocomplete
+                  disabled={disabledBranch}
                   options={options}
                   size='small'
                   getOptionLabel={(option) => option.split('').map((c, i) => i === 0 ? c.toUpperCase() : c).join('')}
