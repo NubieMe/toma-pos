@@ -25,11 +25,12 @@ export async function POST(req: NextRequest) {
       name: user.role?.name,
     },
     profile: {
-      picture: user.profile?.picture || null
+      picture: user.profile?.picture || null,
+      name: user.profile?.name || '',
     },
     branch: {
-      id: user.branch?.id || null
-    }
+      id: user.branch?.id || null,
+    },
   }
 
   const res = NextResponse.json({ data: payload })
