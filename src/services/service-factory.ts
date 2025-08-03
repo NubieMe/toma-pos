@@ -100,9 +100,6 @@ export class ServiceFactory {
         const fields = key.split('-')
 
         where.OR = fields.map(f => ({ [f]: { contains: search[key] } }))
-
-      } else if (typeof search[key] === 'boolean') {
-        where[key] = search[key]
       } else if (key === 'start_date') {
         if (where['created_date']) where['created_date'] = { ...where['created_date'], gte: search[key] }
         else where['created_date'] = { gte: search[key] }
@@ -112,7 +109,22 @@ export class ServiceFactory {
       } else if (key === 'month_date') {
         where['created_date'] = queryMonth(search[key])
       } else {
-        where[key] = { contains: search[key] }
+        if (dot) {
+          const fields = key.split('.');
+          const lastField = fields.pop()!;
+
+          let currentLevel = where;
+          for (const field of fields) {
+            if (!currentLevel[field]) {
+              currentLevel[field] = {};
+            }
+            currentLevel = currentLevel[field];
+          }
+
+          currentLevel[lastField] = { contains: search[key] };
+        } else {
+          where[key] = search[key]
+        }
       }
     })
 
