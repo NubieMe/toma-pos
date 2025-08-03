@@ -4,6 +4,7 @@ import React from 'react';
 import { Avatar, Box, Typography, Divider, MenuItem, ListItemIcon } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import LogoutIcon from '@mui/icons-material/Logout';
+import { useAuth } from '@/context/auth-context';
 
 interface Props {
   onClose: () => void;
@@ -11,36 +12,28 @@ interface Props {
 }
 
 export default function ProfileCard({ onClose, onLogout }: Props) {
-  // Ganti dengan data pengguna asli dari session atau state management Anda
-  const user = {
-    name: 'Budi Santoso',
-    role: 'Administrator',
-    avatarUrl: '/images/avatar.png', // path ke avatar Anda
-  };
+  const { user } = useAuth();
 
   const handleEditProfile = () => {
-    // Tambahkan logika navigasi ke halaman edit profil di sini
     console.log('Navigasi ke Edit Profile...');
-    onClose(); // Tutup menu setelah diklik
+    onClose();
   };
 
   const handleLogoutClick = () => {
-    // Panggil fungsi logout dari parent
     onLogout();
     onClose();
   };
 
   return (
-    // Kita tidak perlu <Menu> di sini, karena komponen ini akan dimasukkan ke dalam <Menu> di Header
-    <div>
+    <>
       <Box sx={{ p: 2, display: 'flex', alignItems: 'center' }}>
-        <Avatar src={user.avatarUrl} alt={user.name} sx={{ width: 40, height: 40 }} />
+        <Avatar src={user?.profile?.picture || ''} alt={user?.profile?.name || user?.username} sx={{ width: 40, height: 40 }} />
         <Box sx={{ ml: 1.5 }}>
           <Typography variant="subtitle2" fontWeight="bold">
-            {user.name}
+            {user?.profile?.name}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            {user.role}
+            {user?.role.name}
           </Typography>
         </Box>
       </Box>
@@ -59,6 +52,6 @@ export default function ProfileCard({ onClose, onLogout }: Props) {
         </ListItemIcon>
         Logout
       </MenuItem>
-    </div>
+    </>
   );
 }
