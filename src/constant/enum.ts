@@ -1,4 +1,4 @@
-import { IOType } from "@prisma/client"
+import { IOType, PaymentMethod, Religion } from "@prisma/client"
 
 export const separator = [
   '/', 
@@ -7,14 +7,10 @@ export const separator = [
 
 export type Separator = (typeof separator)[number] | null
 
-export const payment_method = [
-  'cash',
-  'qris',
-  'credit_card',
-  'debit_card',
-  'transfer',
-  'emoney',
-] as const
+export const payment_method = Object.values(PaymentMethod).map(m => ({
+  value: m,
+  label: m.replace('_', ' ')
+}))
 
 export const ioTypes = Object.values(IOType)
 
@@ -24,7 +20,6 @@ export const stockIn = [
 ] as const
 
 export const stockOut = [
-  'transfer',
   'consumption',
   'defect',
   'return',
@@ -39,5 +34,19 @@ export const COMMON_FEATURES = [
   'import', 
   'print',
   'approve',
-  'confirm'
+  'confirm',
+  'filter',
 ] as const
+
+export const genders = [
+  {
+    label: 'Laki-Laki',
+    value: 'L',
+  },
+  {
+    label: 'Perempuan',
+    value: 'P',
+  },
+]
+
+export const religions = Object.values(Religion)
