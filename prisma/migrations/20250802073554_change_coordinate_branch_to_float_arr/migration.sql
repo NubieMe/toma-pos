@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "branches" ALTER COLUMN "coordinate" SET DATA TYPE DOUBLE PRECISION[];
