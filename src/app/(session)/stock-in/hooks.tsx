@@ -6,14 +6,13 @@ import { StockIO } from "@/types/stock";
 import React from "react";
 
 export default function useStockIn() {
-  const { stocksIn, setStocksIn, deleteStockIn } = useStockInStore()
+  const { stocksIn, setStocksIn, deleteStockIn, addStockIn } = useStockInStore()
   const [total, setTotal] = React.useState(0)
   const [open, setOpen] = React.useState(false)
   const [openDelete, setOpenDelete] = React.useState(false)
   const [mode, setMode] = React.useState<ActionTable>('view')
   const [data, setData] = React.useState<StockIO | null>(null)
   const [loading, setLoading] = React.useState(false)
-  const [action, setAction] = React.useState<ActionTable[]>([])
   const [branches, setBranches] = React.useState<string[]>([])
   const [page, setPage] = React.useState(0)
   const [rowsPerPage, setRowsPerPage] = React.useState(10)
@@ -76,7 +75,6 @@ export default function useStockIn() {
     mode,
     data,
     loading,
-    action,
     branches,
     page,
     rowsPerPage,
@@ -86,7 +84,6 @@ export default function useStockIn() {
     handleDelete,
     fetchStocksIn,
     stocksIn,
-    setAction,
     setBranches,
     setPage,
     setRowsPerPage,
@@ -97,5 +94,6 @@ export default function useStockIn() {
     setMode,
     setData,
     total,
+    addStockIn,
   }
 }

@@ -10,18 +10,14 @@ import UomModal from './modal'
 import AlertDialog from '@/components/ui/alert'
 import { usePermission } from '@/hooks/use-permission'
 import { Button } from '@mui/material'
-import { useAuth } from '@/context/auth-context'
 import useUom from './hooks'
 import Search from '@/components/table/search'
 
 export default function Page() {
   const { permission } = usePermission()
-  const { user }  = useAuth()
   const {
     uoms,
     loading,
-    setAction,
-    action,
     open,
     setOpen,
     openDelete,
@@ -54,10 +50,6 @@ export default function Page() {
     fetchUoms()
   }, [page, rowsPerPage, order, orderBy, search])
 
-  React.useEffect(() => {
-    if (permission.length) setAction(permission)
-  }, [user])
-
   return (
     <>
       <DataTable
@@ -67,7 +59,6 @@ export default function Page() {
         rows={uoms}
         total={total}
         rowIdKey='id'
-        getRowActions={() => action}
         onActionClick={(action, row) => {
           handleClick(row, action)
         }}

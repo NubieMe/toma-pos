@@ -4,7 +4,6 @@ import BranchAuto from '@/components/auto-complete/branch'
 import DataTable from '@/components/table/data-table'
 import AlertDialog from '@/components/ui/alert'
 import { stockOut } from '@/constant/enum'
-import { useAuth } from '@/context/auth-context'
 import { usePermission } from '@/hooks/use-permission'
 import { TableColumn } from '@/types/column'
 import { StockIO } from '@/types/stock'
@@ -16,12 +15,9 @@ import useStockOut from './hooks'
 
 export default function Page() {
   const { permission } = usePermission()
-  const { user }  = useAuth()
   const {
     stocksOut,
     loading,
-    setAction,
-    action,
     open,
     setOpen,
     openDelete,
@@ -56,11 +52,6 @@ export default function Page() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, rowsPerPage, order, orderBy, branches])
 
-  React.useEffect(() => {
-    if (permission.length) setAction(permission)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user])
-
   return (
     <>
       <DataTable
@@ -70,7 +61,6 @@ export default function Page() {
         rows={stocksOut}
         total={total}
         rowIdKey='id'
-        getRowActions={() => action}
         onActionClick={(action, row) => {
           handleClick(row, action)
         }}
@@ -98,6 +88,7 @@ export default function Page() {
         open={open}
         onClose={() => setOpen(false)}
         options={[...stockOut]}
+        title='Add Stock Out'
       />
       <AlertDialog
         title='Delete Stock'

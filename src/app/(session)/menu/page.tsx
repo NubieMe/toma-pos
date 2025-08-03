@@ -3,7 +3,6 @@
 
 import DataTable from "@/components/table/data-table"
 import AlertDialog from "@/components/ui/alert"
-import { useAuth } from "@/context/auth-context"
 import { usePermission } from "@/hooks/use-permission"
 import { TableColumn } from "@/types/column"
 import { Menu } from "@/types/menu"
@@ -15,12 +14,9 @@ import Search from "@/components/table/search"
 
 export default function Page() {
   const { permission } = usePermission()
-  const { user } = useAuth()
   const {
     menus,
     loading,
-    setAction,
-    action,
     open,
     setOpen,
     openDelete,
@@ -56,10 +52,6 @@ export default function Page() {
     fetchMenus()
   }, [search, page, rowsPerPage, order, orderBy])
 
-  React.useEffect(() => {
-    if (permission.length) setAction(permission)
-  }, [user])
-
   return (
     <>
       <DataTable
@@ -69,7 +61,6 @@ export default function Page() {
         total={total}
         title="Menu Configuration"
         rowIdKey="id"
-        getRowActions={() => action}
         actions={
           <div className="flex items-center gap-20">
             <Search

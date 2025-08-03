@@ -12,7 +12,6 @@ export default function useMenu() {
   const [loading, setLoading] = React.useState(false)
   const { menus, setMenus, deleteMenu } = useMenuStore()
   const [total, setTotal] = React.useState(0)
-  const [action, setAction] = React.useState<ActionTable[]>([])
   const [search, setSearch] = React.useState('')
   const [page, setPage] = React.useState(0)
   const [rowsPerPage, setRowsPerPage] = React.useState(10)
@@ -81,8 +80,6 @@ export default function useMenu() {
     setData,
     loading,
     setLoading,
-    action,
-    setAction,
     search,
     setSearch,
     page,

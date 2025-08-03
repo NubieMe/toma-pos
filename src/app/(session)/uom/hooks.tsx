@@ -12,7 +12,6 @@ export default function useUom() {
   const [mode, setMode] = React.useState<ActionTable>('view')
   const [data, setData] = React.useState<Uom | null>(null)
   const [loading, setLoading] = React.useState(false)
-  const [action, setAction] = React.useState<ActionTable[]>([])
   const [search, setSearch] = React.useState('')
   const [page, setPage] = React.useState(0)
   const [rowsPerPage, setRowsPerPage] = React.useState(10)
@@ -71,7 +70,6 @@ export default function useUom() {
     mode,
     data,
     loading,
-    action,
     search,
     page,
     rowsPerPage,
@@ -81,7 +79,6 @@ export default function useUom() {
     handleDelete,
     fetchUoms,
     uoms,
-    setAction,
     setSearch,
     setPage,
     setRowsPerPage,

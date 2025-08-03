@@ -22,6 +22,7 @@ import { TableColumn } from '@/types/column'
 import RowActions from './actions'
 import TablePaginationActions from './pagination-actions'
 import { ActionTable } from '@/types/action'
+import { usePermission } from '@/hooks/use-permission'
 
 function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
   if (b[orderBy] < a[orderBy]) return -1
@@ -44,7 +45,6 @@ interface DataTableProps<T extends Record<string, any>> {
   rowIdKey?: keyof T
   title?: string
   actions?: React.ReactNode
-  getRowActions?: (row: T) => ActionTable[]
   onActionClick?: (action: ActionTable, row: T) => void
   loading: boolean
   order: 'asc' | 'desc'
@@ -64,7 +64,6 @@ export default function DataTable<T extends Record<string, any>>({
   rowIdKey = 'id',
   title,
   actions,
-  getRowActions,
   onActionClick,
   loading,
   order,
@@ -77,6 +76,7 @@ export default function DataTable<T extends Record<string, any>>({
   setRowsPerPage,
   total,
 }: DataTableProps<T>) {
+  const { permission } = usePermission()
   const [selected, setSelected] = React.useState<readonly (string | number)[]>([])
 
   const handleRequestSort = (
@@ -157,7 +157,7 @@ export default function DataTable<T extends Record<string, any>>({
                     </TableSortLabel>
                   </TableCell>
                 ))}
-                {getRowActions &&
+                {permission.some(a => ["print", "view", "edit", "delete"].includes(a)) && 
                   <TableCell align="right">
                     <TableSortLabel disabled>
                       Action
@@ -206,11 +206,11 @@ export default function DataTable<T extends Record<string, any>>({
                           {col.render ? col.render(row[col.key], row) : row[col.key]}
                         </TableCell>
                       ))}
-                      {getRowActions && (
+                      {permission.some(a => ["print", "view", "edit", "delete"].includes(a)) && (
                         <TableCell align="right">
                           <RowActions
                             row={row}
-                            actions={getRowActions?.(row) ?? []}
+                            actions={permission}
                             onActionClick={onActionClick}
                           />
                         </TableCell>

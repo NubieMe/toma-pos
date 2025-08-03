@@ -75,6 +75,8 @@ export default function ItemModal({
   
   React.useEffect(() => {
     if (open) fetchCompany()
+
+    setDisplayPrice('0')
     reset({
       name: initialData?.name ?? '',
       code: initialData?.code ?? '',
@@ -178,7 +180,7 @@ export default function ItemModal({
                   getOptionLabel={(option) => option.name}
                   isOptionEqualToValue={(option, value) => option.id === value.id}
                   value={categories.find((c) => c.id === field.value) || null}
-                  onChange={(_, newValue) => field.onChange(newValue || '')}
+                  onChange={(_, newValue) => field.onChange(newValue?.id || '')}
                   renderInput={(params) => <TextField {...params} label="Category" size='small' />}
                 />
   
@@ -200,7 +202,7 @@ export default function ItemModal({
                   getOptionLabel={(option) => option.name}
                   isOptionEqualToValue={(option, value) => option.id === value.id}
                   value={uoms.find((u) => u.id === field.value) || null}
-                  onChange={(_, newValue) => field.onChange(newValue || '')}
+                  onChange={(_, newValue) => field.onChange(newValue?.id || '')}
                   renderInput={(params) => <TextField {...params} label="UOM" size='small' />}
                 />
   
@@ -268,25 +270,6 @@ export default function ItemModal({
               )}
             />
           )}
-
-          {/* <div className='grid grid-cols-2 gap-5'>
-            <TextField
-              {...register('path')}
-              label="Path"
-              size='small'
-              defaultValue={defaultValues!.path}
-              disabled={disabled}
-            />
-
-            <TextField
-              variant='standard'
-              {...register('icon')}
-              label="Icon"
-              size='small'
-              defaultValue={defaultValues!.icon}
-              disabled={disabled}
-            />
-          </div> */}
         </Stack>
       </form>
     </EntityModal>

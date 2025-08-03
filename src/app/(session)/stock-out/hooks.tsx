@@ -13,7 +13,6 @@ export default function useStockOut() {
   const [mode, setMode] = React.useState<ActionTable>('view')
   const [data, setData] = React.useState<StockIO | null>(null)
   const [loading, setLoading] = React.useState(false)
-  const [action, setAction] = React.useState<ActionTable[]>([])
   const [branches, setBranches] = React.useState<string[]>([])
   const [page, setPage] = React.useState(0)
   const [rowsPerPage, setRowsPerPage] = React.useState(10)
@@ -76,7 +75,6 @@ export default function useStockOut() {
     mode,
     data,
     loading,
-    action,
     branches,
     page,
     rowsPerPage,
@@ -86,7 +84,6 @@ export default function useStockOut() {
     handleDelete,
     fetchStocksOut,
     stocksOut,
-    setAction,
     setBranches,
     setPage,
     setRowsPerPage,

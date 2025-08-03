@@ -2,7 +2,6 @@
 
 import DataTable from '@/components/table/data-table'
 import AlertDialog from '@/components/ui/alert'
-import { useAuth } from '@/context/auth-context'
 import { usePermission } from '@/hooks/use-permission'
 import { TableColumn } from '@/types/column'
 import { StockIO } from '@/types/stock'
@@ -16,12 +15,9 @@ import BranchAuto from '@/components/auto-complete/branch'
 
 export default function Page() {
   const { permission } = usePermission()
-  const { user }  = useAuth()
   const {
     stocksIn,
     loading,
-    setAction,
-    action,
     open,
     setOpen,
     openDelete,
@@ -38,8 +34,8 @@ export default function Page() {
     orderBy,
     setOrderBy,
     handleDelete,
-    handleClick,
     total,
+    addStockIn,
   } = useStockIn()
 
   const columns: TableColumn<StockIO>[] = [
@@ -56,11 +52,6 @@ export default function Page() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, rowsPerPage, order, orderBy, branches])
 
-  React.useEffect(() => {
-    if (permission.length) setAction(permission)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user])
-
   return (
     <>
       <DataTable
@@ -70,10 +61,6 @@ export default function Page() {
         rows={stocksIn}
         total={total}
         rowIdKey='id'
-        getRowActions={() => action}
-        onActionClick={(action, row) => {
-          handleClick(row, action)
-        }}
         actions={
           <div className="flex items-center gap-20">
             <BranchAuto
@@ -98,6 +85,8 @@ export default function Page() {
         open={open}
         onClose={() => setOpen(false)}
         options={[...stockIn]}
+        title='Add Stock In'
+        afterSubmit={addStockIn}
       />
       <AlertDialog
         title='Delete Stock'

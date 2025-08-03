@@ -10,12 +10,10 @@ import AlertDialog from '@/components/ui/alert'
 import { usePermission } from '@/hooks/use-permission'
 import { Button } from '@mui/material'
 import useRole from './hooks'
-import { useAuth } from '@/context/auth-context'
 import Search from '@/components/table/search'
 
 export default function Page() {
   const { permission } = usePermission()
-  const { user } = useAuth()
   const {
     open,
     setOpen,
@@ -23,8 +21,6 @@ export default function Page() {
     setOpenDelete,
     mode,
     data,
-    action,
-    setAction,
     loading,
     page,
     setPage,
@@ -50,10 +46,6 @@ export default function Page() {
   ]
 
   React.useEffect(() => {
-    if (permission.length) setAction(permission)
-  }, [user])
-
-  React.useEffect(() => {
     fetchRoles()
   }, [page, rowsPerPage, order, orderBy, search])
 
@@ -66,7 +58,6 @@ export default function Page() {
         rowIdKey='id'
         columns={columns}
         title='Role Management'
-        getRowActions={() => action}
         onActionClick={(action, row) => {
           handleClick(row, action)
         }}

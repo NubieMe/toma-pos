@@ -1,7 +1,6 @@
 'use client'
 
 import DataTable from '@/components/table/data-table'
-import { useAuth } from '@/context/auth-context'
 import { usePermission } from '@/hooks/use-permission'
 import { TableColumn } from '@/types/column'
 import { Branch } from '@/types/branch'
@@ -14,12 +13,9 @@ import BranchModal from './modal'
 
 export default function Page() {
   const { permission } = usePermission()
-  const { user }  = useAuth()
   const {
     branches,
     loading,
-    setAction,
-    action,
     open,
     setOpen,
     openDelete,
@@ -53,11 +49,6 @@ export default function Page() {
     fetchBranches()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, rowsPerPage, order, orderBy, search])
-  
-  React.useEffect(() => {
-    if (permission.length) setAction(permission)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user])
 
   return (
     <>
@@ -68,7 +59,6 @@ export default function Page() {
         rows={branches}
         total={total}
         rowIdKey='id'
-        getRowActions={() => action}
         onActionClick={(action, row) => {
           handleClick(row, action)
         }}

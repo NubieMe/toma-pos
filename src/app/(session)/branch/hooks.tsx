@@ -12,7 +12,6 @@ export default function useBranch() {
   const [mode, setMode] = React.useState<ActionTable>('view')
   const [data, setData] = React.useState<Branch | null>(null)
   const [loading, setLoading] = React.useState(false)
-  const [action, setAction] = React.useState<ActionTable[]>([])
   const [search, setSearch] = React.useState('')
   const [page, setPage] = React.useState(0)
   const [rowsPerPage, setRowsPerPage] = React.useState(10)
@@ -76,7 +75,6 @@ export default function useBranch() {
     mode,
     data,
     loading,
-    action,
     search,
     page,
     rowsPerPage,
@@ -86,7 +84,6 @@ export default function useBranch() {
     handleDelete,
     fetchBranches,
     branches,
-    setAction,
     setSearch,
     setPage,
     setRowsPerPage,

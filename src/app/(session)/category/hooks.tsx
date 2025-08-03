@@ -12,7 +12,6 @@ export default function useCategory() {
   const [mode, setMode] = React.useState<ActionTable>('view')
   const [data, setData] = React.useState<Category | null>(null)
   const [loading, setLoading] = React.useState(false)
-  const [action, setAction] = React.useState<ActionTable[]>([])
   const [search, setSearch] = React.useState('')
   const [page, setPage] = React.useState(0)
   const [rowsPerPage, setRowsPerPage] = React.useState(10)
@@ -71,7 +70,6 @@ export default function useCategory() {
     mode,
     data,
     loading,
-    action,
     search,
     page,
     rowsPerPage,
@@ -81,7 +79,6 @@ export default function useCategory() {
     handleDelete,
     fetchCategories,
     categories,
-    setAction,
     setSearch,
     setPage,
     setRowsPerPage,

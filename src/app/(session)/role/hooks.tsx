@@ -10,7 +10,6 @@ export default function useRole() {
   const [loading, setLoading] = React.useState(false)
   const [mode, setMode] = React.useState<ActionTable>('view')
   const [data, setData] = React.useState<Role | null>(null)
-  const [action, setAction] = React.useState<ActionTable[]>([])
   const [search, setSearch] = React.useState('')
   const [page, setPage] = React.useState(0)
   const [rowsPerPage, setRowsPerPage] = React.useState(10)
@@ -78,8 +77,6 @@ export default function useRole() {
     setMode,
     data,
     setData,
-    action,
-    setAction,
     search,
     setSearch,
     page,

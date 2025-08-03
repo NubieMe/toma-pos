@@ -12,6 +12,18 @@ export default function RowActions<T>({
   }) {
     return (
       <Box sx={{ gap: 0.5 }}>
+        {actions.includes("print") && (
+          <Tooltip title="Print">
+            <IconButton
+              size="small"
+              onClick={() => onActionClick?.("print", row)}
+              color="primary"
+            >
+              <Icon>print</Icon>
+            </IconButton>
+          </Tooltip>
+        )}
+
         {actions.includes("view") && (
           <Tooltip title="View">
             <IconButton
