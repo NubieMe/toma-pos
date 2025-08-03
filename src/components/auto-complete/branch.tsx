@@ -1,16 +1,20 @@
 import useBranch from '@/app/(session)/branch/hooks'
 import { Branch } from '@/types/branch'
-import { Autocomplete, TextField } from '@mui/material'
+import { Autocomplete, Box, TextField } from '@mui/material'
 import React from 'react'
 
 interface Props {
   value: string[]
   setValue: React.Dispatch<React.SetStateAction<string[]>>
+  label?: string
+  disabled?: boolean
 }
 
 export default function BranchAuto({
   value,
   setValue,
+  label = 'Branch',
+  disabled = false,
 }: Props) {
   const [branches, setBranches] = React.useState<Branch[]>([])
   const { setPage, setRowsPerPage, fetchBranches } = useBranch()
@@ -25,7 +29,7 @@ export default function BranchAuto({
   }, [])
 
   return (
-    <div className='w-64'>
+    <Box sx={{ minWidth: 300, mt: -2 }}>
       <Autocomplete
         options={branches}
         size='small'
@@ -34,8 +38,9 @@ export default function BranchAuto({
         value={branches.filter(branch => value.includes(branch.id))}
         onChange={(_, newValue) => setValue(newValue.map(branch => branch.id))}
         multiple
-        renderInput={(params) => <TextField {...params} label="Branch" size='small' />}
+        renderInput={(params) => <TextField {...params} label={label} size='small' />}
+        disabled={disabled}
       />
-    </div>
+    </Box>
   )
 }

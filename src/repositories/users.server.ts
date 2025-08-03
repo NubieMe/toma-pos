@@ -10,6 +10,7 @@ export const getUserById = async (id: string) => {
             username: true,
             role: true,
             profile: true,
+            branch: true,
             created_date: true,
         },
     });

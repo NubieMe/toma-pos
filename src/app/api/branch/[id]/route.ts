@@ -12,7 +12,6 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     if (!data) {
       return NextResponse.json({ message: "Branch tidak ditemukan" }, { status: 404 })
     }
-    data.coordinate = JSON.parse(data.coordinate)
 
     return NextResponse.json({ data })
   } catch (error) {
@@ -30,10 +29,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (!existing) {
       return NextResponse.json({ message: "Branch tidak ditemukan" }, { status: 404 })
     }
-    body.coordinate = JSON.stringify(body.coordinate)
   
     const data = await ServiceFactory.update('branch', id, body, user.id)
-    data.coordinate = JSON.parse(data.coordinate)
   
     return NextResponse.json({ data, message: "Branch berhasil diperbarui" })
   } catch (error) {
@@ -52,7 +49,6 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     }
 
     const data = await ServiceFactory.delete('branch', id, user.id)
-    data.coordinate = JSON.parse(data.coordinate)
 
     return NextResponse.json({ message: "Branch berhasil dihapus", data })
   } catch (error) {

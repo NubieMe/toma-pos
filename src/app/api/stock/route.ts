@@ -10,7 +10,15 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
   try {
-    const { data, total } = await ServiceFactory.getAll('stock', req.nextUrl.searchParams, { item: true, branch: true })
+    const { data, total } = await ServiceFactory.getAll('stock', req.nextUrl.searchParams, {
+      item: {
+        include: {
+          category: true,
+          uom: true,
+        },
+      },
+      branch: true,
+    })
 
     return NextResponse.json({ data, total })
   } catch (error) {

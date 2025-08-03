@@ -1,5 +1,6 @@
-import { IOType, Item, StatusType } from "@prisma/client"
+import { IOType, StatusType } from "@prisma/client"
 import { Branch } from "./branch"
+import { Item } from "./item"
 
 export type Stock = {
   id: string
