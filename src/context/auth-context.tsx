@@ -34,7 +34,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     if (!user && pathname !== '/login') fetchData()
-  }, [router, user])
+  }, [router, user, pathname])
 
   const logout = () => {
     setUser(null)

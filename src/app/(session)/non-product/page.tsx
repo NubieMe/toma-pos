@@ -3,19 +3,13 @@
 import BranchAuto from '@/components/auto-complete/branch'
 import DataTable from '@/components/table/data-table'
 import AlertDialog from '@/components/ui/alert'
-import { ioTypes } from '@/constant/enum'
-import { usePermission } from '@/hooks/use-permission'
 import { TableColumn } from '@/types/column'
 import { Stock } from '@/types/stock'
-import { Button } from '@mui/material'
 import React from 'react'
 import StockModal from '../../../components/modal/stock'
-import StockIOModal from '../../../components/modal/stock-io'
 import useStock from './hooks'
 
 export default function Page() {
-  const [openAdd, setOpenAdd] = React.useState(false)
-  const { permission } = usePermission()
   const {
     stocks,
     loading,
@@ -71,9 +65,6 @@ export default function Page() {
               value={branches}
               setValue={setBranches}
             />
-            {permission.includes('add') && <Button onClick={() => setOpenAdd(true)}>
-              New
-            </Button>}
           </div>
         }
         page={page}
@@ -90,12 +81,6 @@ export default function Page() {
         open={open}
         onClose={() => setOpen(false)}
         initialData={data!}
-      />
-      <StockIOModal
-        open={openAdd}
-        onClose={() => setOpenAdd(false)}
-        options={ioTypes}
-        title=''
       />
       <AlertDialog
         title='Delete Branch'

@@ -12,26 +12,46 @@ import { z } from 'zod'
 import { userSchema } from '../schema'
 import { useCompany } from '@/hooks/use-company'
 
-export default function UserDetailPage({
+interface Props {
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}
+
+export default function Page({
   params,
   searchParams
-}: {
-  params: { id: string }
-  searchParams: { mode?: 'edit' | 'view' }
-}) {
-  const mode = searchParams.mode === 'edit' ? 'edit' : 'view'
+}: Props) {
   const router = useRouter()
   const { company, fetchCompany } = useCompany()
+
+  const [resolvedParams, setResolvedParams] = React.useState<{ id: string } | null>(null)
+  const [resolvedSearchParams, setResolvedSearchParams] = React.useState<{
+    [key: string]: string | string[] | undefined
+  } | null>(null)
+
   const [user, setUser] = React.useState<UserWithRelations | undefined>(undefined)
   const [branches, setBranches] = React.useState<Branch[]>([])
   const [roles, setRoles] = React.useState<Role[]>([])
   const [loading, setLoading] = React.useState(false)
 
+  React.useEffect(() => {
+    async function resolveParams() {
+      const [resolvedP, resolvedSP] = await Promise.all([params, searchParams])
+      setResolvedParams(resolvedP)
+      setResolvedSearchParams(resolvedSP)
+    }
+    resolveParams()
+  }, [params, searchParams])
+
+  const mode = resolvedSearchParams?.mode === "edit" ? "edit" : "view"
+
   async function handleSubmit(data: z.infer<typeof userSchema>) {
+    if (!resolvedParams) return
+
     const duration = 10000
     try {
       toast({ description: 'Menyimpan...', variant: 'info', duration })
-      const response = await fetch(`/api/user/${params.id}`, {
+      const response = await fetch(`/api/user/${resolvedParams?.id}`, {
         method: 'PATCH',
         body: JSON.stringify(data),
       })
@@ -49,11 +69,13 @@ export default function UserDetailPage({
   }
 
   React.useEffect(() => {
+    if (!resolvedParams) return
+
     async function fetchData() {
       setLoading(true)
       try {
         const [userRes, branchesRes, rolesRes] = await Promise.all([
-          fetch(`/api/user/${params.id}`),
+          fetch(`/api/user/${resolvedParams?.id}`),
           fetch('/api/branch?limit=10000'),
           fetch('/api/role?limit=10000')
         ])

@@ -7,9 +7,9 @@ import { Prisma } from "@prisma/client";
 import { compare, hash } from "bcryptjs";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const data = await ServiceFactory.getOne('user', id, { profile: true, branch: true, role: true });
 
     if (!data) {
@@ -22,9 +22,9 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const user = JSON.parse(req.headers.get('x-user-payload')!);
     const { username, password, branch_id, role_id, confirm, ...rest } = await req.json();
 

@@ -11,7 +11,7 @@ import { Role } from '@prisma/client'
 import { toast } from '@/hooks/use-toast'
 import { useRouter } from 'next/navigation'
 
-export default function AddUserPage() {
+export default function Page() {
   const router = useRouter()
   const { company, fetchCompany } = useCompany()
   const [branches, setBranches] = React.useState<Branch[]>([])

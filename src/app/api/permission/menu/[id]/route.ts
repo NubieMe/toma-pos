@@ -6,9 +6,9 @@ import { errorHandler } from "@/utils/helper";
 import { Permission } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id: menuId } = params;
+    const { id: menuId } = await params;
     const newPermissions = await req.json() as Omit<Permission, 'created_by' | 'created_date' | 'updated_by' | 'updated_date'>[];
     const user = JSON.parse(req.headers.get('x-user-payload')!) as Session;
 

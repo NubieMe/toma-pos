@@ -12,7 +12,6 @@ export default function useStock() {
   const [mode, setMode] = React.useState<ActionTable>('view')
   const [data, setData] = React.useState<Stock | null>(null)
   const [loading, setLoading] = React.useState(false)
-  const [action, setAction] = React.useState<ActionTable[]>([])
   const [branches, setBranches] = React.useState<string[]>([])
   const [page, setPage] = React.useState(0)
   const [rowsPerPage, setRowsPerPage] = React.useState(10)
@@ -74,7 +73,6 @@ export default function useStock() {
     mode,
     data,
     loading,
-    action,
     branches,
     page,
     rowsPerPage,
@@ -84,7 +82,6 @@ export default function useStock() {
     handleDelete,
     fetchStocks,
     stocks,
-    setAction,
     setBranches,
     setPage,
     setRowsPerPage,
