@@ -119,6 +119,14 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
+    const user = JSON.parse(req.headers.get('x-user-payload')!) as Session
+    const query = req.nextUrl.searchParams
+    const search = query.get('search') ? JSON.parse(query.get('search')!) : {}
+
+    if (user?.role.name !== 'root') {
+      const updatedSearch = JSON.stringify({ ...search, 'role.name.not': 'root' })
+      req.nextUrl.searchParams.set('search', updatedSearch)
+    }
     const { data, total } = await ServiceFactory.getAll('user', req.nextUrl.searchParams, { profile: true, branch: true, role: true })
 
     return NextResponse.json({ data, total })
