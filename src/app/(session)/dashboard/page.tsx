@@ -9,7 +9,7 @@ export default async function DashboardPage() {
     <div className="p-6">
       <h1 className="text-xl font-semibold">Welcome, {user.username}!</h1>
       <p>You&apos;re logged in as <strong>{user.role.name}</strong></p>
-      <p>Dashboard & many feature coming soon!</p>
+      <p>Dashboard & other feature coming soon!</p>
     </div>
   )
 }
