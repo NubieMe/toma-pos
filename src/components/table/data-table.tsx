@@ -222,20 +222,75 @@ export default function DataTable<T extends Record<string, any>>({
             </TableBody>
           </Table>
         </TableContainer>
-        <TablePagination
-          rowsPerPageOptions={[10, 20, 50, 100, 500, 1000]}
-          component="div"
-          count={total}
-          rowsPerPage={rowsPerPage}
-          labelRowsPerPage="Data per page"
-          page={page}
-          onPageChange={(_, newPage) => setPage(newPage)}
-          onRowsPerPageChange={(e) => {
-            setRowsPerPage(parseInt(e.target.value, 10))
-            setPage(0)
+
+        {/* Custom Pagination */}
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            px: 2,
+            py: 1,
           }}
-          ActionsComponent={TablePaginationActions}
-        />
+        >
+          {/* Kiri: Page X of Y */}
+          <Box sx={{ fontSize: 14 }}>
+            Page {page + 1} of {Math.ceil(total / rowsPerPage)}
+          </Box>
+
+          {/* Tengah: Nomor halaman */}
+          <TablePagination
+            rowsPerPageOptions={[]}
+            component="div"
+            count={total}
+            rowsPerPage={rowsPerPage}
+            page={page}
+            onPageChange={(_, newPage) => setPage(newPage)}
+            labelDisplayedRows={() => ``}
+            ActionsComponent={TablePaginationActions}
+            sx={{
+              '& .MuiTablePagination-toolbar': {
+                minHeight: 'auto',
+                p: 0,
+              },
+              '& .MuiTablePagination-displayedRows': {
+                display: 'none',
+              },
+              '& .MuiTablePagination-spacer': {
+                display: 'none',
+              },
+            }}
+          />
+
+          {/* Kanan: Dropdown Rows per page */}
+          <TablePagination
+            rowsPerPageOptions={[10, 20, 50, 100, 500, 1000]}
+            component="div"
+            count={total}
+            rowsPerPage={rowsPerPage}
+            page={page}
+            onPageChange={() => {}}
+            onRowsPerPageChange={(e) => {
+              setRowsPerPage(parseInt(e.target.value, 10))
+              setPage(0)
+            }}
+            labelRowsPerPage=""
+            labelDisplayedRows={() => ``}
+            ActionsComponent={() => null}
+            sx={{
+              '& .MuiTablePagination-toolbar': {
+                minHeight: 'auto',
+                p: 0,
+              },
+              '& .MuiTablePagination-spacer': {
+                display: 'none',
+              },
+              '& .MuiTablePagination-displayedRows': {
+                display: 'none',
+              },
+            }}
+          />
+        </Box>
       </Paper>
     </Box>
   )
