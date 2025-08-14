@@ -1,6 +1,11 @@
 import React from "react";
 
-export default function NoDataIcon({ width = 188, height = 165 }: any) {
+interface NoDataIconProps {
+  width?: number;
+  height?: number;
+}
+
+export default function NoDataIcon({ width = 188, height = 165 }: NoDataIconProps) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"

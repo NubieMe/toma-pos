@@ -1,6 +1,11 @@
 import React from "react";
 
-export default function SidebarIcon({width = 32, height = 32}: any) {
+interface SidebarIconProps {
+  width?: number;
+  height?: number;
+}
+
+export default function SidebarIcon({width = 32, height = 32}: SidebarIconProps) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"

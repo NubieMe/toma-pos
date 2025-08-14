@@ -1,13 +1,14 @@
 import React from "react";
-import { Box, Typography } from "@mui/material";
+import { Box, Typography, useTheme } from "@mui/material";
 import NoDataIcon from "../icon/no-data-icon";
 
 function NoData({
   mini = false,
   typeMsg = "default",
-  className = "loading-datas",
+  // className = "loading-datas",
 }) {
-  const messageCustom: any = {
+  const theme = useTheme();
+  const messageCustom: Record<string, { title: string; desc: string, showIcon?: boolean }> = {
     custom: {
       title: "Informasi Tidak Tersedia",
       desc: "Mohon maaf, informasi yang Anda cari tidak dapat ditampilkan karena data yang diperlukan mungkin tidak lengkap atau tidak tersedia. Pastikan semua informasi yang diperlukan telah diinput dengan benar.",
@@ -20,7 +21,7 @@ function NoData({
   };
   return (
     <Box sx={{ display: "flex", justifyContent: "center" }}>
-      <Box className="text-center w-100 d-flex flex-column align-items-center justify-content-center bg-white">
+      <Box className={`text-center w-100 d-flex flex-column align-items-center justify-content-center ${theme.palette.mode === "dark" ? "bg-gray" : "bg-white"}`}>
         {!Boolean(mini) && (
           <>
             {messageCustom[typeMsg]?.showIcon && (
