@@ -318,17 +318,19 @@ export default function DataTable<T extends Record<string, any>>({
             </TableHead>
             <TableBody>
               {loading ? (
-                <TableRow>
-                  {columns.map((col, i) => (
-                    <TableCell
-                      key={i}
-                      align={col.numeric ? "right" : "left"}
-                      padding={col.disablePadding ? "none" : "normal"}
-                      >
-                      <Skeleton height={26} variant="rectangular" />
-                    </TableCell>
-                  ))}
-                </TableRow>
+                Array.from({ length: 2 }, (_, i) => i).map((idx) => (
+                  <TableRow key={idx}>
+                    {columns.map((col, i) => (
+                      <TableCell
+                        key={i}
+                        align={col.numeric ? "right" : "left"}
+                        padding={col.disablePadding ? "none" : "normal"}
+                        >
+                        <Skeleton height={26} variant="rectangular" />
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
               ) : visibleRows.length === 0 ? (
                 <TableRow>
                   <TableCell
