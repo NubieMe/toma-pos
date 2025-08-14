@@ -179,6 +179,7 @@ model Company {
 model Branch {
   id           String    @id @default(uuid())
   name         String
+  code         String    @unique @db.VarChar(4)
   address      String?
   phone        String?
   coordinate   Float[]   @default([])

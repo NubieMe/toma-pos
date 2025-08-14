@@ -121,3 +121,8 @@ export function toCurrencyFormat(value: number) {
 export function parseNumber(value: string) {
   return value.replace(/\./g, '');
 }
+
+export function romanizeMonth(month: number) {
+  const roman = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
+  return roman[month];
+}

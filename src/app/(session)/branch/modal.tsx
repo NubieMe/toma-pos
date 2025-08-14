@@ -34,15 +34,17 @@ export default function BranchModal({
   const { handleSubmit, reset, control } = useForm<z.infer<typeof branchSchema>>({
     resolver: zodResolver(branchSchema),
     defaultValues: {
+      code: '',
       name: '',
       address: '',
       phone: '',
       coordinate: [],
     },
   })
-  
+
   React.useEffect(() => {
     reset({
+      code: initialData?.code || '',
       name: initialData?.name || '',
       address: initialData?.address || '',
       phone: initialData?.phone || '',
@@ -58,7 +60,7 @@ export default function BranchModal({
         body: JSON.stringify(body),
       })
       const parsed = (await res.json())
-  
+
       let variant: AlertColor = 'warning'
       if (parsed.data) {
         if (mode === 'add') addBranch(parsed.data)
@@ -74,7 +76,7 @@ export default function BranchModal({
         variant: 'warning',
       })
     }
-    
+
     onClose()
   })
 
@@ -96,6 +98,22 @@ export default function BranchModal({
               <TextField
                 {...field}
                 label="Name"
+                disabled={disabled}
+                error={!!fieldState.error}
+                helperText={fieldState.error?.message}
+                required
+              />
+            )}
+          />
+
+          <Controller
+            name='code'
+            control={control}
+            defaultValue={initialData?.code || ''}
+            render={({ field, fieldState }) => (
+              <TextField
+                {...field}
+                label="Shorts"
                 disabled={disabled}
                 error={!!fieldState.error}
                 helperText={fieldState.error?.message}

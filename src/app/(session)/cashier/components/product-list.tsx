@@ -1,15 +1,25 @@
-"use client"
-import { Box, Grid, Card, CardContent, Typography, TextField, Button } from "@mui/material"
-import { Add as AddIcon, Search as SearchIcon } from "@mui/icons-material"
-import type { Stock } from "@/types/stock"
+"use client";
+import {
+  Box,
+  Grid,
+  Card,
+  CardContent,
+  Typography,
+  TextField,
+  Button,
+} from "@mui/material";
+import { Add as AddIcon, Search as SearchIcon } from "@mui/icons-material";
+import type { Stock } from "@/types/stock";
+import SkeletonCardList from "@/components/skeleton/skeleton-card";
+import NoData from "@/components/empty/no-data";
 
 interface ProductListProps {
-  stocks: Stock[]
-  searchTerm: string
-  loading: boolean
-  onSearchChange: (value: string) => void
-  onAddToCart: (stock: Stock) => void
-  formatCurrency: (amount: number) => string
+  stocks: Stock[];
+  searchTerm: string;
+  loading: boolean;
+  onSearchChange: (value: string) => void;
+  onAddToCart: (stock: Stock) => void;
+  formatCurrency: (amount: number) => string;
 }
 
 export function ProductList({
@@ -21,7 +31,7 @@ export function ProductList({
   formatCurrency,
 }: ProductListProps) {
   // Gunakan semua stocks, tidak dibatasi
-  const displayedStocks = stocks
+  const displayedStocks = stocks;
 
   return (
     <Card>
@@ -33,15 +43,23 @@ export function ProductList({
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
             InputProps={{
-              startAdornment: <SearchIcon sx={{ mr: 1, color: "text.secondary" }} />,
+              startAdornment: (
+                <SearchIcon sx={{ mr: 1, color: "text.secondary" }} />
+              ),
             }}
           />
         </Box>
 
         {loading ? (
-          <Typography>Loading...</Typography>
+          <>
+            <SkeletonCardList />
+          </>
+        ) : displayedStocks.length === 0 || !displayedStocks ? (
+          <Box sx={{ height: '15rem', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <NoData />
+          </Box>
         ) : (
-          <Grid container  spacing={2}>
+          <Grid container spacing={2}>
             {displayedStocks.map((stock) => (
               <Grid size={{ xs: 12, sm: 6, md: 4 }} key={stock.id}>
                 <Card variant="outlined" sx={{ height: "100%" }}>
@@ -79,5 +97,5 @@ export function ProductList({
         )}
       </CardContent>
     </Card>
-  )
+  );
 }

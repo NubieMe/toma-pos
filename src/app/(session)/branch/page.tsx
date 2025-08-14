@@ -40,6 +40,7 @@ export default function Page() {
 
   const columns: TableColumn<Branch>[] = [
     { key: 'name', label: 'Name' },
+    { key: 'code', label: 'Shorts' },
     { key: 'address', label: 'Address' },
     { key: 'phone', label: 'Phone' },
     { key: 'coordinate', label: 'Coordinate', render: (value) => Array.isArray(value) && value?.map(val => String(val)).join(', ') },
