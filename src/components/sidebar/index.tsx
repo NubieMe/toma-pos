@@ -11,6 +11,7 @@ import {
   Divider,
   // Icon,
   Box,
+  Avatar,
 } from "@mui/material";
 import { Menu } from "@/types/menu";
 import NavRenderer, { isChildActive } from "./nav-renderer";
@@ -21,7 +22,6 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
 import { useCompany } from "@/hooks/use-company";
 import SidebarIcon from "../icon/sidebar-icon";
-import Image from "next/image";
 
 const drawerWidth = 260;
 const collapsedWidth = 60;
@@ -145,11 +145,12 @@ const Sidebar = () => {
             <Link href="/dashboard">
               {company?.logo ? (
                 <Box>
-                  <Image
+                  <Avatar
+                    variant="square"
                     src={company?.logo || ""}
                     alt="logo"
                     className="object-fit-cover object-center"
-                    style={{ width: 30, height: 30 }}
+                    sx={{ width: 30, height: 30 }}
                   />
                 </Box>
               ) : (
