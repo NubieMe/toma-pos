@@ -3,8 +3,7 @@
 
 import {
   Box,
-  Checkbox,
-  CircularProgress,
+  // Checkbox,
   Paper,
   Skeleton,
   Table,
@@ -25,7 +24,6 @@ import EnhancedTableToolbar from "./toolbar";
 import { visuallyHidden } from "@mui/utils";
 import { TableColumn } from "@/types/column";
 import RowActions from "./actions";
-import TablePaginationActions from "./pagination-actions";
 import { ActionTable } from "@/types/action";
 import { usePermission } from "@/hooks/use-permission";
 import NoData from "../empty/no-data";
@@ -229,6 +227,7 @@ export default function DataTable<T extends Record<string, any>>({
     setOrderBy(property);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.checked) {
       const newSelected = rows.map((row) => row[rowIdKey]);
@@ -238,6 +237,7 @@ export default function DataTable<T extends Record<string, any>>({
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleClick = (
     event: React.MouseEvent<unknown>,
     id: string | number

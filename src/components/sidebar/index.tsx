@@ -1,6 +1,6 @@
 "use client";
 
-import React, { use, useEffect } from "react";
+import React, { useEffect } from "react";
 import {
   Drawer,
   IconButton,
@@ -9,7 +9,7 @@ import {
   useMediaQuery,
   Toolbar,
   Divider,
-  Icon,
+  // Icon,
   Box,
 } from "@mui/material";
 import { Menu } from "@/types/menu";
@@ -21,6 +21,7 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
 import { useCompany } from "@/hooks/use-company";
 import SidebarIcon from "../icon/sidebar-icon";
+import Image from "next/image";
 
 const drawerWidth = 260;
 const collapsedWidth = 60;
@@ -38,9 +39,8 @@ const Sidebar = () => {
 
   useEffect(() => {
     fetchCompany();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  console.log("company=>", company);
 
   const isActive = React.useCallback(
     (url: string) => pathname.startsWith(url),
@@ -145,7 +145,7 @@ const Sidebar = () => {
             <Link href="/dashboard">
               {company?.logo ? (
                 <Box>
-                  <img
+                  <Image
                     src={company?.logo || ""}
                     alt="logo"
                     className="object-fit-cover object-center"
