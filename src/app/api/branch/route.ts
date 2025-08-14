@@ -23,6 +23,15 @@ export async function POST(req: NextRequest) {
     const user = JSON.parse(req.headers.get('x-user-payload')!) as Session
 
     const data = await prisma.$transaction(async tx => {
+      const existingCode = await prisma.branch.count({
+        where: {
+          code: body.code
+        }
+      })
+
+      if (existingCode) {
+        throw new ResponseError("Kode branch sudah ada", 400)
+      }
       const created = await ServiceFactory.create('branch', body, user.id, undefined, tx)
 
       const stocks = await getStockByNotBranch(created.id)

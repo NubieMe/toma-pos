@@ -24,10 +24,17 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const { id } = await params
     const body = await req.json()
     const user = JSON.parse(req.headers.get('x-user-payload')!) as Session
-    const existing = await ServiceFactory.count('branch', id)
+    const existing = await ServiceFactory.getOne('branch', id)
 
     if (!existing) {
       return NextResponse.json({ message: "Branch tidak ditemukan" }, { status: 404 })
+    }
+
+    if (body.code !== existing.code) {
+      const existingCode = await ServiceFactory.count('branch', body.code)
+      if (existingCode) {
+        return NextResponse.json({ message: "Kode branch sudah digunakan" }, { status: 400 })
+      }
     }
   
     const data = await ServiceFactory.update('branch', id, body, user.id)
