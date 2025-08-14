@@ -1,5 +1,6 @@
 import { PaymentMethod } from "@prisma/client";
 import { Branch } from "./branch";
+import { Product } from "./product";
 
 export type Transaction = {
   id: string;
