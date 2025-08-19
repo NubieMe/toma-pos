@@ -14,8 +14,14 @@ export default function useLogin() {
   const [error, setError] = React.useState('')
   const [showPassword, setShowPassword] = React.useState(false)
   const [loading, setLoading] = React.useState(false)
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+  const { control, handleSubmit } = useForm<FormData>({
+    mode: 'onBlur',
+    reValidateMode: 'onBlur',
     resolver: zodResolver(loginSchema),
+    defaultValues: {
+      username: "",
+      password: ""
+    }
   })
   const router = useRouter()
   const { setSidebar } = useMenuStore()
@@ -51,9 +57,8 @@ export default function useLogin() {
     showPassword,
     setShowPassword,
     loading,
-    register,
+    control,
     handleSubmit,
     onSubmit,
-    errors,
   }
 }
