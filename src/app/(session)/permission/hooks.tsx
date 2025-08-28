@@ -1,22 +1,23 @@
 import { toast } from "@/hooks/use-toast";
+import useTableStore from "@/store/table";
 import { Menu } from "@/types/menu";
 import { PermissionsState, RawPermissionData } from "@/types/permission";
 import { findParents } from "@/utils/helper";
 import { Role } from "@prisma/client";
-import React from "react";
+import { useMemo, useState } from "react";
 
 export default function usePermission() {
-  const [activeTab, setActiveTab] = React.useState(0);
-  const [roles, setRoles] = React.useState<Role[]>([]);
-  const [menus, setMenus] = React.useState<Menu[]>([]);
-  const [loading, setLoading] = React.useState(true);
-  const [permissions, setPermissions] = React.useState<PermissionsState>({});
-  const [originalPermissions, setOriginalPermissions] = React.useState<PermissionsState>({});
-  const [selectedRoleId, setSelectedRoleId] = React.useState<string | null>(null);
-  const [selectedMenu, setSelectedMenu] = React.useState<Menu | null>(null);
-  const [open, setOpen] = React.useState(false);
-  const [description, setDescription] = React.useState('');
-  const [pendingAction, setPendingAction] = React.useState<(() => void) | null>(null);
+  const { setOpenAlert } = useTableStore();
+  const [activeTab, setActiveTab] = useState(0);
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [menus, setMenus] = useState<Menu[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [permissions, setPermissions] = useState<PermissionsState>({});
+  const [originalPermissions, setOriginalPermissions] = useState<PermissionsState>({});
+  const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
+  const [selectedMenu, setSelectedMenu] = useState<Menu | null>(null);
+  const [description, setDescription] = useState('');
+  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -66,7 +67,7 @@ export default function usePermission() {
     return clonedPerms;
   };
 
-  const isDirty = React.useMemo(() => {
+  const isDirty = useMemo(() => {
     const comparableCurrent = getComparableState(permissions);
     const comparableOriginal = getComparableState(originalPermissions);
 
@@ -170,7 +171,7 @@ export default function usePermission() {
         setPermissions(originalPermissions);
         setSelectedRoleId(newRoleId);
       });
-      setOpen(true);
+      setOpenAlert(true);
     } else {
       setSelectedRoleId(newRoleId);
     }
@@ -185,7 +186,7 @@ export default function usePermission() {
         setPermissions(originalPermissions);
         setSelectedMenu(newMenu);
       });
-      setOpen(true);
+      setOpenAlert(true);
     } else {
       setSelectedMenu(newMenu);
     }
@@ -200,7 +201,7 @@ export default function usePermission() {
         setPermissions(originalPermissions);
         setActiveTab(newValue);
       });
-      setOpen(true);
+      setOpenAlert(true);
     } else {
       setActiveTab(newValue);
     }
@@ -213,7 +214,7 @@ export default function usePermission() {
         setPermissions(originalPermissions);
         fetchData();
       })
-      setOpen(true);
+      setOpenAlert(true);
     } else {
       fetchData();
     }
@@ -223,12 +224,12 @@ export default function usePermission() {
     if (pendingAction) {
       pendingAction();
     }
-    setOpen(false);
+    setOpenAlert(false);
     setPendingAction(null);
   };
 
   function handleCancelAction() {
-    setOpen(false);
+    setOpenAlert(false);
     setPendingAction(null);
   };
 
@@ -250,8 +251,6 @@ export default function usePermission() {
     activeTab,
     setActiveTab,
     handlePermissionChange,
-    open,
-    setOpen,
     description,
     handleConfirmAction,
     handleCancelAction,

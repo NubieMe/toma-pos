@@ -25,10 +25,8 @@ const PermissionPage = () => {
     handleRoleSelection,
     handleSave,
     handlePermissionChange,
-    open,
     description,
     handleTabChange,
-    handleCancelAction,
     handleConfirmAction,
     handleRefresh,
   } = usePermission();
@@ -111,8 +109,6 @@ const PermissionPage = () => {
         </TabPanel>
       </Paper>
       <AlertDialog
-        open={open}
-        setOpen={(isOpen) => !isOpen && handleCancelAction()}
         description={description}
         onConfirm={handleConfirmAction}
       />
