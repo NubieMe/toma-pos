@@ -1,34 +1,32 @@
-import { Role } from '@prisma/client'
 import EntityModal from '@/components/modal'
-import { useForm } from 'react-hook-form'
-import {
-  AlertColor,
-  Stack,
-  TextField,
-} from '@mui/material'
-import { roleSchema } from './schema'
-import { z } from 'zod'
-import useRoleStore from '@/store/role'
-import { useEffect } from 'react'
-import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from '@/hooks/use-toast'
-import { ActionTable } from '@/types/action'
+import useTableStore from '@/store/table'
+import { zodResolver } from '@hookform/resolvers/zod'
+import {
+  Stack,
+  TextField
+} from '@mui/material'
+import { Role } from '@prisma/client'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useEffect } from 'react'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
+import { roleSchema } from './schema'
 
 interface Props {
   open: boolean
   onClose: () => void
-  mode: ActionTable
   initialData?: Partial<Role>
 }
 
 export default function RoleModal({
   open,
   onClose,
-  mode,
   initialData,
 }: Props) {
+  const queryClient = useQueryClient()
+  const { mode } = useTableStore()
   const disabled = mode === 'view'
-  const { addRole, editRole } = useRoleStore()
 
   const { register, handleSubmit, reset, formState: { errors, defaultValues } } = useForm<z.infer<typeof roleSchema>>({
     resolver: zodResolver(roleSchema),
@@ -45,31 +43,37 @@ export default function RoleModal({
     })
   }, [open, initialData, reset])
 
-  const onSubmit = handleSubmit(async (body) => {
-    try {
-      const url = mode === 'add' ? '/api/role' : `/api/role/${initialData?.id}`
-      const res = await fetch(url, {
-        method: mode === 'add' ? 'POST' : 'PATCH',
-        body: JSON.stringify(body),
-      })
-      const parsed = (await res.json())
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const upsertRole = async (body: any) => {
+    const url = mode === 'add' ? '/api/role' : `/api/role/${initialData?.id}`
+    const res = await fetch(url, {
+      method: mode === 'add' ? 'POST' : 'PATCH',
+      body: JSON.stringify(body),
+    })
+    const result = (await res.json())
 
-      let variant: AlertColor = 'warning'
-      if (parsed) {
-        if (mode === 'add') addRole(parsed.data)
-        else editRole(parsed.data)
-
-        variant = 'success'
-      }
-      toast({ description: parsed.message, variant })
-    } catch (error) {
-      toast({
-        description: (error as Error).message,
-        variant: 'error',
-      })
+    if (!res.ok) {
+      throw new Error(result.message)
     }
-    
-    onClose()
+
+    return result
+  }
+
+  const mutation = useMutation({
+    mutationFn: upsertRole,
+    onSuccess: (res) => {
+      toast({ description: res.message, duration: 5000, variant: 'success' })
+      queryClient.invalidateQueries({ queryKey: ['roles'] })
+      onClose()
+    },
+    onError: (err) => {
+      toast({ description: err.message, duration: 5000, variant: 'warning' })
+    },
+  })
+
+  const onSubmit = handleSubmit(async (body) => {
+    toast({ variant: 'info', description: 'Menyimpan...' })
+    mutation.mutate(body)
   })
 
   return (

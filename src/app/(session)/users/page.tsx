@@ -1,27 +1,30 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client"
 
-import React from 'react'
+import { useEffect } from 'react'
 import DataTable from '@/components/table/data-table'
 import { TableColumn } from '@/types/column'
 import { format } from 'date-fns'
 import AlertDialog from '@/components/ui/alert'
 import { usePermission } from '@/hooks/use-permission'
-import { Button } from '@mui/material'
+import { Box, Button, Icon, IconButton, Tooltip } from '@mui/material'
 import Search from '@/components/table/search'
 import useUser from './hooks'
 import { UserWithRelations as User } from '@/types/user'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import useTableStore from '@/store/table'
+import { useDebounce } from '@/hooks/use-debounce'
+import { toast } from '@/hooks/use-toast'
 
 export default function Page() {
+  const queryClient = useQueryClient()
   const { permission } = usePermission()
   const {
-    users,
-    loading,
-    openDelete,
-    setOpenDelete,
-    search,
-    setSearch,
     fetchUsers,
+    handleDelete,
+    handleClick,
+  } = useUser()
+  const {
     page,
     setPage,
     rowsPerPage,
@@ -30,10 +33,11 @@ export default function Page() {
     setOrder,
     orderBy,
     setOrderBy,
-    handleDelete,
-    handleClick,
-    total,
-  } = useUser()
+    search,
+    setSearch,
+    setOpenAlert,
+  } = useTableStore()
+  const debounceSearch = useDebounce(search)
 
   const columns: TableColumn<User>[] = [
     { key: 'username', label: 'Username' },
@@ -43,48 +47,80 @@ export default function Page() {
     { key: 'created_date', label: 'Created Date', render: (value) => format(value as Date, 'd MMMM y')},
   ]
 
-  React.useEffect(() => {
-    fetchUsers()
-  }, [page, rowsPerPage, order, orderBy, search])
+  const query = useQuery({
+    queryKey: ['users', page, rowsPerPage, order, orderBy, debounceSearch],
+    queryFn: fetchUsers,
+  })
+
+  const mutation = useMutation({
+    mutationFn: handleDelete,
+    onSuccess: (res) => {
+      toast({ description: res.message, duration: 5000, variant: 'success' })
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+    },
+    onError: (err) => {
+      toast({ description: err.message, duration: 5000, variant: 'warning' })
+    },
+    onSettled: () => {
+      setOpenAlert(false)
+    }
+  })
+
+  useEffect(() => {
+    setSearch('')
+    setPage(0)
+    setOrderBy('created_date')
+    setOrder('desc')
+    setRowsPerPage(10)
+  }, [])
 
   return (
     <>
       <DataTable
         title='User Management'
-        loading={loading}
+        loading={query.isPending}
         columns={columns}
-        rows={users}
-        total={total}
+        rows={query.data || []}
         rowIdKey='id'
         onActionClick={(action, row) => {
           handleClick(row, action)
         }}
         actions={
-          <div className="flex items-center gap-20">
+          <Box className="flex items-center gap-20">
             <Search
               value={search}
               setValue={setSearch}
             />
-            {permission.includes('add') && <Button onClick={() => handleClick(null, 'add')}>
-              New
-            </Button>}
-          </div>
+            <Box className="flex gap-2">
+              <Tooltip title="Refresh">
+                <IconButton
+                  onClick={() => {
+                    setSearch('')
+                    setPage(0)
+                    setOrderBy('created_date')
+                    setOrder('desc')
+                    query.refetch()
+                  }}
+                >
+                  <Icon>refresh</Icon>
+                </IconButton>
+              </Tooltip>
+              {permission.includes('add') && 
+                <Button onClick={() => handleClick(null, 'add')}>
+                  New
+                </Button>
+              }
+            </Box>
+          </Box>
         }
-        page={page}
-        setPage={setPage}
-        rowsPerPage={rowsPerPage}
-        setRowsPerPage={setRowsPerPage}
-        order={order}
-        setOrder={setOrder}
-        orderBy={orderBy}
-        setOrderBy={setOrderBy}
       />
       <AlertDialog
         title='Delete User'
         description='Are you sure you want to delete this User?'
-        setOpen={setOpenDelete}
-        open={openDelete}
-        onConfirm={handleDelete}
+        onConfirm={() => {
+          toast({ description: 'Menghapus...', duration: 5000, variant: 'info' })
+          mutation.mutate()
+        }}
       />
     </>
   )

@@ -1,38 +1,36 @@
 import { Category } from '@prisma/client'
 import EntityModal from '@/components/modal'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import {
-  AlertColor,
   Stack,
   TextField,
 } from '@mui/material'
 import { categorySchema, categoryWithCodeSchema } from './schema'
 import { z } from 'zod'
-import useCategoryStore from '@/store/category'
-import React from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from '@/hooks/use-toast'
 import { useCompany } from '@/hooks/use-company'
-import { ActionTable } from '@/types/action'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import useTableStore from '@/store/table'
+import { useEffect, useMemo } from 'react'
 
 interface Props {
   open: boolean
   onClose: () => void
-  mode: ActionTable
   initialData?: Partial<Category>
 }
 
 export default function CategoryModal({
   open,
   onClose,
-  mode,
   initialData,
 }: Props) {
+  const queryClient = useQueryClient()
+  const { mode } = useTableStore()
   const disabled = mode === 'view'
-  const { addCategory, editCategory } = useCategoryStore()
   const { company, fetchCompany } = useCompany()
 
-  const activeSchema = React.useMemo(() => {
+  const activeSchema = useMemo(() => {
     if (company?.category_auto === false) {
       return categoryWithCodeSchema
     }
@@ -40,7 +38,9 @@ export default function CategoryModal({
     return categorySchema
   }, [company?.category_auto])
 
-  const { register, handleSubmit, reset, formState: { errors, defaultValues } } = useForm<z.infer<typeof activeSchema>>({
+  const { control, handleSubmit, reset } = useForm<z.infer<typeof activeSchema>>({
+    mode: 'onBlur',
+    reValidateMode: 'onBlur',
     resolver: zodResolver(activeSchema),
     defaultValues: {
       name: '',
@@ -49,7 +49,7 @@ export default function CategoryModal({
     },
   })
   
-  React.useEffect(() => {
+  useEffect(() => {
     if (open) fetchCompany()
     reset({
       name: initialData?.name || '',
@@ -59,32 +59,37 @@ export default function CategoryModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initialData, reset])
 
-  const onSubmit = handleSubmit(async (body) => {
-    try {
-      const url = mode === 'add' ? '/api/category' : `/api/category/${initialData?.id}`
-      const res = await fetch(url, {
-        method: mode === 'add' ? 'POST' : 'PATCH',
-        body: JSON.stringify(body),
-      })
-      const parsed = (await res.json())
-  
-      let variant: AlertColor = 'warning'
-      if (parsed.data) {
-        if (mode === 'add') addCategory(parsed.data)
-        else editCategory(parsed.data)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const upsertCategory = async (body: any) => {
+    const url = mode === 'add' ? '/api/category' : `/api/category/${initialData?.id}`
+    const res = await fetch(url, {
+      method: mode === 'add' ? 'POST' : 'PATCH',
+      body: JSON.stringify(body),
+    })
+    const result = await res.json()
 
-        variant = 'success'
-      }
-
-      toast({ description: parsed.message, variant })
-    } catch (error) {
-      toast({
-        description: (error as Error).message,
-        variant: 'warning',
-      })
+    if (!res.ok) {
+      throw new Error(result.message)
     }
-    
-    onClose()
+
+    return result
+  }
+
+  const mutation = useMutation({
+    mutationFn: upsertCategory,
+    onSuccess: (res) => {
+      toast({ description: res.message, duration: 5000, variant: 'success' })
+      queryClient.invalidateQueries({ queryKey: ['categories'] })
+      onClose()
+    },
+    onError: (err) => {
+      toast({ description: err.message, duration: 5000, variant: 'warning' })
+    },
+  })
+
+  const onSubmit = handleSubmit(async (body) => {
+    toast({ variant: 'info', description: 'Menyimpan...' })
+    mutation.mutate(body)
   })
 
   return (
@@ -97,34 +102,50 @@ export default function CategoryModal({
     >
       <form onSubmit={onSubmit}>
         <Stack spacing={2}>
-          <TextField
-            {...register('code')}
-            label={`Code${company?.category_auto ? ' (Auto-Generated)' : ''}`}
-            disabled={company?.category_auto}
-            defaultValue={defaultValues!.code}
-            error={!!errors.code}
-            helperText={errors.code?.message}
-            required={!company?.category_auto}
+          <Controller
+            name='code'
+            control={control}
+            render={({ field, fieldState }) => (
+              <TextField
+                {...field}
+                label={`Code${company?.category_auto ? ' (Auto-Generated)' : ''}`}
+                disabled={company?.category_auto}
+                error={!!fieldState.error}
+                helperText={fieldState.error?.message}
+                required={!company?.category_auto}
+              />
+            )}
           />
 
-          <TextField
-            {...register('name')}
-            label="Name"
-            disabled={disabled}
-            defaultValue={defaultValues!.name}
-            error={!!errors.name}
-            helperText={errors.name?.message}
-						required
-					/>
+          <Controller
+            name='name'
+            control={control}
+            render={({ field, fieldState }) => (
+              <TextField
+                {...field}
+                label="Name"
+                disabled={disabled}
+                error={!!fieldState.error}
+                helperText={fieldState.error?.message}
+                required
+              />
+            )}
+          />
 
-          <TextField
-            {...register('description')}
-            label="Description"
-            disabled={disabled}
-            defaultValue={defaultValues!.description}
-            error={!!errors.description}
-            multiline
-            minRows={3}
+          <Controller
+            name='description'
+            control={control}
+            render={({ field, fieldState }) => (
+              <TextField
+                {...field}
+                label="Description"
+                disabled={disabled}
+                error={!!fieldState.error}
+                helperText={fieldState.error?.message}
+                multiline
+                minRows={3}
+              />
+            )}
           />
         </Stack>
       </form>

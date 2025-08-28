@@ -3,7 +3,6 @@ import { toast } from '@/hooks/use-toast'
 import { convertNumber, parseNumber } from '@/utils/helper'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
-  AlertColor,
   Autocomplete,
   FormControl,
   FormHelperText,
@@ -13,11 +12,13 @@ import {
 import React from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { z } from 'zod'
-import useBranch from '../../app/(session)/branch/hooks'
-import useItem from '../../app/(session)/item/hooks'
 import { stockIOSchema } from '../../app/(session)/product/schema'
 import { IOType } from '@prisma/client'
-import { StockIO } from '@/types/stock'
+import useItem from '@/hooks/use-item'
+import useBranch from '@/hooks/use-branch'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { Item } from '@/types/item'
+import { Branch } from '@/types/branch'
 
 interface Props {
   open: boolean
@@ -26,7 +27,6 @@ interface Props {
   title: string
   branchId?: string
   disabledBranch?: boolean
-  afterSubmit?: (io: StockIO) => void
 }
 
 export default function StockIOModal({
@@ -36,12 +36,12 @@ export default function StockIOModal({
   title,
   branchId,
   disabledBranch = false,
-  afterSubmit,
 }: Props) {
+  const queryClient = useQueryClient()
   const [displayQty, setDisplayQty] = React.useState('0')
   const [displayPrice, setDisplayPrice] = React.useState('0')
-  const { items, fetchItems } = useItem()
-  const { branches, fetchBranches } = useBranch()
+  const { query: itemsQuery } = useItem()
+  const { query: branchesQuery } = useBranch()
 
   const { handleSubmit, reset, watch, control } = useForm<z.infer<typeof stockIOSchema>>({
     resolver: zodResolver(stockIOSchema),
@@ -59,8 +59,10 @@ export default function StockIOModal({
   })
 
   React.useEffect(() => {
-    fetchItems()
-    fetchBranches()
+    if (open) {
+      itemsQuery.refetch()
+      branchesQuery.refetch()
+    }
 
     reset({
       item_id: '',
@@ -74,30 +76,37 @@ export default function StockIOModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, reset])
 
-  const onSubmit = handleSubmit(async (body) => {
-    try {
-      const url = `/api/stock`
-      const res = await fetch(url, {
-        method: 'POST',
-        body: JSON.stringify(body),
-      })
-      const parsed = (await res.json())
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const upsertStock = async (body: any) => {
+    const url = `/api/stock`
+    const res = await fetch(url, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    })
+    const result = (await res.json())
 
-      let variant: AlertColor = 'warning'
-      if (parsed) {
-        if (afterSubmit) afterSubmit(parsed.data)
-
-        variant = 'success'
-      }
-      toast({ description: parsed.message, variant })
-    } catch (error) {
-      toast({
-        description: (error as Error).message,
-        variant: 'error',
-      })
+    if (!res.ok) {
+      throw new Error(result.message)
     }
-    
-    onClose()
+
+    return result
+  }
+
+  const mutation = useMutation({
+    mutationFn: upsertStock,
+    onSuccess: (res) => {
+      toast({ description: res.message, duration: 5000, variant: 'success' })
+      queryClient.invalidateQueries({ queryKey: ['stocks-in', 'stocks-out'] })
+      onClose()
+    },
+    onError: (err) => {
+      toast({ description: err.message, duration: 5000, variant: 'warning' })
+    },
+  })
+
+  const onSubmit = handleSubmit(async (body) => {
+    toast({ variant: 'info', description: 'Menyimpan...' })
+    mutation.mutate(body)
   })
 
   return (
@@ -117,11 +126,11 @@ export default function StockIOModal({
             render={({ field, fieldState }) => (
               <FormControl>
                 <Autocomplete
-                  options={items}
+                  options={itemsQuery.data || []}
                   size='small'
                   getOptionLabel={(option) => option.name}
                   isOptionEqualToValue={(option, value) => option.id === value.id}
-                  value={items.find(i => i.id === field.value) || null}
+                  value={itemsQuery.data?.find((i: Item) => i.id === field.value) || null}
                   onChange={(_, newValue) => field.onChange(newValue?.id || '')}
                   renderInput={(params) => <TextField {...params} label="Item" size='small' />}
                 />
@@ -137,11 +146,11 @@ export default function StockIOModal({
             render={({ field, fieldState }) => (
               <FormControl>
                 <Autocomplete
-                  options={branches}
+                  options={branchesQuery.data || []}
                   size='small'
                   getOptionLabel={(option) => option.name}
                   isOptionEqualToValue={(option, value) => option.id === value.id}
-                  value={branches.find(b => b.id === field.value) || null}
+                  value={branchesQuery.data?.find((b: Branch) => b.id === field.value) || null}
                   onChange={(_, newValue) => field.onChange(newValue?.id || '')}
                   renderInput={(params) => <TextField {...params} label="Branch" size='small' />}
                 />
@@ -180,11 +189,11 @@ export default function StockIOModal({
               render={({ field, fieldState }) => (
                 <FormControl>
                 <Autocomplete
-                  options={branches.filter(b => b.id !== watch('branch_id'))}
+                  options={branchesQuery.data?.filter((b: Branch) => b.id !== watch('branch_id'))}
                   size='small'
                   getOptionLabel={(option) => option.name}
                   isOptionEqualToValue={(option, value) => option.id === value.id}
-                  value={branches.find(b => b.id === field.value) || null}
+                  value={branchesQuery.data?.find((b: Branch) => b.id === field.value) || null}
                   onChange={(_, newValue) => field.onChange(newValue?.id || '')}
                   renderInput={(params) => <TextField {...params} label="To" size='small' />}
                 />

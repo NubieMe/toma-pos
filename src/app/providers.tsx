@@ -9,6 +9,9 @@ import React from 'react';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { id } from 'date-fns/locale';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+const queryClient = new QueryClient();
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const { resolvedTheme } = useTheme();
@@ -30,11 +33,13 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider theme={muiTheme}>
       <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={id}>
-        <CssBaseline />
-        <AuthProvider>
-          <ToastProvider />
-          {children}
-        </AuthProvider>
+        <QueryClientProvider client={queryClient}>
+          <CssBaseline />
+          <AuthProvider>
+            <ToastProvider />
+            {children}
+          </AuthProvider>
+        </QueryClientProvider>
       </LocalizationProvider>
     </ThemeProvider>
   );

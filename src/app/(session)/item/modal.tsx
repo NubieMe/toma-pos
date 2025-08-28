@@ -2,46 +2,42 @@ import { Item, ItemBody } from '@/types/item'
 import EntityModal from '@/components/modal'
 import { Controller, useForm } from 'react-hook-form'
 import {
-  AlertColor,
   Autocomplete,
   Checkbox,
   FormControl,
   FormControlLabel,
   FormHelperText,
-  // Checkbox,
-  // FormControlLabel,
   Stack,
   TextField,
 } from '@mui/material'
 import { itemSchema } from './schema'
 import { z } from 'zod'
-import useItemStore from '@/store/item'
-import React from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from '@/hooks/use-toast'
 import { Category, Uom } from '@prisma/client'
 import { useCompany } from '@/hooks/use-company'
 import { convertNumber, parseNumber } from '@/utils/helper'
-import { ActionTable } from '@/types/action'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import useTableStore from '@/store/table'
+import { useEffect, useState } from 'react'
 
 interface Props {
   open: boolean
   onClose: () => void
-  mode: ActionTable
   initialData?: Partial<Item>
 }
 
 export default function ItemModal({
   open,
   onClose,
-  mode,
   initialData,
 }: Props) {
-  const [displayPrice, setDisplayPrice] = React.useState('')
-  const [uoms, setUoms] = React.useState<Uom[]>([])
-  const [categories, setCategories] = React.useState<Category[]>([])
+  const queryClient = useQueryClient()
+  const { mode } = useTableStore()
+  const [displayPrice, setDisplayPrice] = useState('')
+  const [uoms, setUoms] = useState<Uom[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
   const disabled = mode === 'view'
-  const { addItem, editItem } = useItemStore()
   const { company, fetchCompany } = useCompany()
   
   const { handleSubmit, reset, watch, control } = useForm<z.infer<typeof itemSchema>>({
@@ -59,7 +55,7 @@ export default function ItemModal({
     },
   })
 
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchData = async () => {
       const [uomRes, categoryRes] = await Promise.all([
         fetch('/api/uom?limit=10000').then(res => res.json()),
@@ -72,8 +68,8 @@ export default function ItemModal({
 
     fetchData()
   }, [])
-  
-  React.useEffect(() => {
+
+  useEffect(() => {
     if (open) fetchCompany()
 
     setDisplayPrice('0')
@@ -89,38 +85,46 @@ export default function ItemModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initialData, reset])
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const upsertItem = async (body: any) => {
+    let sentBody: ItemBody = body;
+    let url = '/api/item', method = 'POST';
+    if (mode === 'edit') {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { price, ...rest } = body
+      sentBody = rest
+      url += `/${initialData?.id}`
+      method = 'PATCH'
+    }
+
+    const res = await fetch(url, {
+      method,
+      body: JSON.stringify(sentBody),
+    })
+    const result = await res.json()
+
+    if (!res.ok) {
+      throw new Error(result.message)
+    }
+
+    return result
+  }
+
+  const mutation = useMutation({
+    mutationFn: upsertItem,
+    onSuccess: (res) => {
+      toast({ description: res.message, duration: 5000, variant: 'success' })
+      queryClient.invalidateQueries({ queryKey: ['items'] })
+      onClose()
+    },
+    onError: (err) => {
+      toast({ description: err.message, duration: 5000, variant: 'warning' })
+    },
+  })
+
   const onSubmit = handleSubmit(async (body) => {
     toast({ variant: 'info', description: 'Menyimpan...' })
-    try {
-      let sentBody: ItemBody = body;
-      let url = '/api/item', method = 'POST';
-      if (mode === 'edit') {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { price, ...rest } = body
-        sentBody = rest
-        url += `/${initialData?.id}`
-        method = 'PATCH'
-      }
-
-      const res = await fetch(url, {
-        method,
-        body: JSON.stringify(sentBody),
-      })
-      const parsed = await res.json()
-  
-      let variant: AlertColor = 'warning'
-      if (parsed) {
-        if (mode === 'add') addItem(parsed.data)
-        else editItem(parsed.data)
-
-        variant = 'success'
-      }
-      
-      toast({ variant, description: parsed.message })
-      onClose()
-    } catch (error) {
-      toast({ variant: 'error', description: (error as Error).message })
-    }
+    mutation.mutate(body)
   })
 
   return (

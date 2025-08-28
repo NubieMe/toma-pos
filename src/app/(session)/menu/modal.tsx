@@ -1,42 +1,41 @@
-import { Menu } from '@/types/menu'
 import EntityModal from '@/components/modal'
-import { Controller, useForm } from 'react-hook-form'
+import { COMMON_FEATURES } from '@/constant/enum'
+import { toast } from '@/hooks/use-toast'
+import { Menu } from '@/types/menu'
+import { zodResolver } from '@hookform/resolvers/zod'
 import {
-  AlertColor,
   Autocomplete,
+  Box,
   Checkbox,
   Chip,
   FormControl,
   FormControlLabel,
   FormHelperText,
   Stack,
-  TextField,
+  TextField
 } from '@mui/material'
-import { menuSchema } from './schema'
-import { z } from 'zod'
-import useMenuStore from '@/store/menu'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import React from 'react'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { toast } from '@/hooks/use-toast'
-import { COMMON_FEATURES } from '@/constant/enum'
-import { ActionTable } from '@/types/action'
+import { Controller, useForm } from 'react-hook-form'
+import { z } from 'zod'
+import { menuSchema } from './schema'
+import useTableStore from '@/store/table'
 
 interface Props {
   open: boolean
   onClose: () => void
-  mode: ActionTable
   initialData?: Partial<Menu>
 }
 
 export default function MenuModal({
   open,
   onClose,
-  mode,
   initialData,
 }: Props) {
+  const { mode } = useTableStore()
+  const queryClient = useQueryClient()
   const [menu, setMenu] = React.useState<Menu[]>([])
   const disabled = mode === 'view'
-  const { addMenu, editMenu } = useMenuStore()
   
   const { handleSubmit, reset, control } = useForm<z.infer<typeof menuSchema>>({
     mode: 'onBlur',
@@ -72,29 +71,37 @@ export default function MenuModal({
     })
   }, [open, initialData, reset])
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const upsertMenu = async (body: any) => {
+    const url = mode === 'add' ? '/api/menu' : `/api/menu/${initialData?.id}`
+    const res = await fetch(url, {
+      method: mode === 'add' ? 'POST' : 'PATCH',
+      body: JSON.stringify(body),
+    })
+    const result = await res.json()
+
+    if (!res.ok) {
+      throw new Error(result.message)
+    }
+
+    return result
+  }
+
+  const mutation = useMutation({
+    mutationFn: upsertMenu,
+    onSuccess: (res) => {
+      toast({ description: res.message, duration: 5000, variant: 'success' })
+      queryClient.invalidateQueries({ queryKey: ['menus'] })
+      onClose()
+    },
+    onError: (err) => {
+      toast({ description: err.message, duration: 5000, variant: 'warning' })
+    },
+  })
+
   const onSubmit = handleSubmit(async (body) => {
     toast({ variant: 'info', description: 'Menyimpan...' })
-    try {
-      const url = mode === 'add' ? '/api/menu' : `/api/menu/${initialData?.id}`
-      const res = await fetch(url, {
-        method: mode === 'add' ? 'POST' : 'PATCH',
-        body: JSON.stringify(body),
-      })
-      const parsed = await res.json()
-  
-      let variant: AlertColor = 'warning'
-      if (parsed) {
-        if (mode === 'add') addMenu(parsed.data)
-        else editMenu(parsed.data)
-
-        variant = 'success'
-      }
-      
-      toast({ variant, description: parsed.message })
-      onClose()
-    } catch (error) {
-      toast({ variant: 'error', description: (error as Error).message })
-    }
+    mutation.mutate(body)
   })
 
   return (
@@ -175,7 +182,7 @@ export default function MenuModal({
             )}
           />
 
-          <div className='grid grid-cols-2 gap-5'>
+          <Box className='grid grid-cols-2 gap-5'>
             <Controller
               name='path'
               control={control}
@@ -203,9 +210,9 @@ export default function MenuModal({
                 />
               )}
             />
-          </div>
+          </Box>
 
-          <div className='grid grid-cols-2 gap-5'>
+          <Box className='grid grid-cols-2 gap-5'>
             <Controller
               name='order'
               control={control}
@@ -245,7 +252,7 @@ export default function MenuModal({
                 />
               )}
             />
-          </div>
+          </Box>
         </Stack>
       </form>
     </EntityModal>

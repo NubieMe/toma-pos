@@ -1,7 +1,7 @@
-import useBranch from '@/app/(session)/branch/hooks'
+import useBranch from '@/hooks/use-branch'
 import { Branch } from '@/types/branch'
 import { Autocomplete, Box, TextField } from '@mui/material'
-import React from 'react'
+import { useEffect } from 'react'
 
 interface Props {
   value: string[]
@@ -16,26 +16,21 @@ export default function BranchAuto({
   label = 'Branch',
   disabled = false,
 }: Props) {
-  const [branches, setBranches] = React.useState<Branch[]>([])
-  const { setPage, setRowsPerPage, fetchBranches } = useBranch()
+  const { query } = useBranch()
 
-  React.useEffect(() => {
-    setPage(0)
-    setRowsPerPage(10000)
-    fetchBranches(data => {
-      setBranches(data)
-    })
+  useEffect(() => {
+    query.refetch()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return (
     <Box sx={{ minWidth: 300, mt: -2 }}>
       <Autocomplete
-        options={branches}
+        options={query.data}
         size='small'
         getOptionLabel={(option) => option.name}
         isOptionEqualToValue={(option, val) => option.id === val.id}
-        value={branches.filter(branch => value.includes(branch.id))}
+        value={query.data?.filter((b: Branch) => value.includes(b.id))}
         onChange={(_, newValue) => setValue(newValue.map(branch => branch.id))}
         multiple
         renderInput={(params) => <TextField {...params} label={label} size='small' />}

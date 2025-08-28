@@ -8,7 +8,6 @@ import { Session } from "@/types/session"
 import { Menu } from "@/types/menu"
 import config from "@/config"
 import { ServiceFactory } from "@/services/service-factory"
-import { Prisma } from "@prisma/client"
 
 export async function GET(req: NextRequest) {
   try {
@@ -16,14 +15,9 @@ export async function GET(req: NextRequest) {
     const sidebar = params.get('sidebar') === 'true'
     const permission = params.get('permission') === 'true'
     const user = JSON.parse(req.headers.get('x-user-payload')!) as Session
-  
-    const include: Prisma.MenuInclude = {
-      parent: true,
-      permissions: true,
-    }
 
     // eslint-disable-next-line prefer-const
-    let { data, total } = (sidebar || permission ? await getSidebarMenu() : await ServiceFactory.getAll('menu', params, include))
+    let { data, total } = (sidebar || permission ? await getSidebarMenu() : await ServiceFactory.getAll('menu', params, { parent: true, permissions: true }))
 
     const availMenu: string[] = [];
     if (sidebar || permission) {

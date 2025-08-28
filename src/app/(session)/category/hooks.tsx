@@ -1,27 +1,26 @@
-import { toast } from "@/hooks/use-toast"
-import useCategoryStore from "@/store/category"
+import useTableStore from "@/store/table"
 import { ActionTable } from "@/types/action"
 import { Category } from "@prisma/client"
-import React from "react"
+import { useState } from "react"
 
 export default function useCategory() {
-  const { categories, setCategories, deleteCategory } = useCategoryStore()
-  const [total, setTotal] = React.useState(0)
-  const [open, setOpen] = React.useState(false)
-  const [openDelete, setOpenDelete] = React.useState(false)
-  const [mode, setMode] = React.useState<ActionTable>('view')
-  const [data, setData] = React.useState<Category | null>(null)
-  const [loading, setLoading] = React.useState(false)
-  const [search, setSearch] = React.useState('')
-  const [page, setPage] = React.useState(0)
-  const [rowsPerPage, setRowsPerPage] = React.useState(10)
-  const [order, setOrder] = React.useState<'asc' | 'desc'>('desc')
-  const [orderBy, setOrderBy] = React.useState<keyof Category>('created_date')
+  const [data, setData] = useState<Category | null>(null)
+  const [open, setOpen] = useState(false)
+  const {
+    page,
+    rowsPerPage,
+    order,
+    orderBy,
+    search,
+    setTotal,
+    setMode,
+    setOpenAlert,
+  } = useTableStore()
   
   const handleClick = (body: Category | null, mode: ActionTable = 'view') => {
     setData(body)
     if (mode === 'delete') {
-      setOpenDelete(true)
+      setOpenAlert(true)
     } else {
       setOpen(true)
       setMode(mode)
@@ -29,65 +28,39 @@ export default function useCategory() {
   }
 
   const handleDelete = async () => {
-    const duration = 5000
-    try {
-      const res = await fetch(`/api/category/${data?.id}`, {
-        method: 'DELETE',
-      })
-      const result = (await res.json()).message
-      toast({ description: result, duration })
-      deleteCategory(data!.id)
-    } catch (error) {
-      toast({ description: (error as Error).message, duration })
-    } finally {
-      setOpenDelete(false)
+    const res = await fetch(`/api/category/${data?.id}`, {
+      method: 'DELETE',
+    })
+    const result = await res.json()
+
+    if (!res.ok) {
+      throw new Error(result.message)
     }
+
+    setData(null)
+    return result
   }
   
   const fetchCategories = async () => {
-    if (!search) setLoading(true)
-    try {
-      let url = `/api/category?page=${page + 1}&limit=${rowsPerPage}&order=${orderBy}-${order}`
-      if (search) {
-        const value = JSON.stringify({ 'name-code-description': search })
-        url += `&search=${value}`
-      }
-      const res = await fetch(url)
-      const { data, total } = await res.json()
-
-      setCategories(data)
-      setTotal(total)
-    } catch (err) {
-      console.error('Error loading categories', err)
-    } finally {
-      setLoading(false)
+    let url = `/api/category?page=${page + 1}&limit=${rowsPerPage}&order=${orderBy}-${order}`
+    if (search) {
+      const value = JSON.stringify({ 'name-code-description': search })
+      url += `&search=${value}`
     }
+    const res = await fetch(url)
+    const { data, total } = await res.json()
+
+    setTotal(total)
+    return data
   }
 
   return {
     open,
-    openDelete,
-    mode,
     data,
-    loading,
-    search,
-    page,
-    rowsPerPage,
-    order,
-    orderBy,
     handleClick,
     handleDelete,
     fetchCategories,
-    categories,
-    setSearch,
-    setPage,
-    setRowsPerPage,
-    setOrder,
-    setOrderBy,
     setOpen,
-    setOpenDelete,
-    setMode,
     setData,
-    total,
   }
 }

@@ -1,27 +1,26 @@
-import { toast } from '@/hooks/use-toast'
-import useItemStore from '@/store/item'
+import useTableStore from '@/store/table'
 import { ActionTable } from '@/types/action'
 import { Item } from '@/types/item'
 import React from 'react'
 
 export default function useItem() {
   const [open, setOpen] = React.useState(false)
-  const [openDelete, setOpenDelete] = React.useState(false)
-  const [mode, setMode] = React.useState<ActionTable>('view')
   const [data, setData] = React.useState<Item | null>(null)
-  const [loading, setLoading] = React.useState(false)
-  const { items, setItems, deleteItem } = useItemStore()
-  const [total, setTotal] = React.useState(0)
-  const [search, setSearch] = React.useState('')
-  const [page, setPage] = React.useState(0)
-  const [rowsPerPage, setRowsPerPage] = React.useState(10)
-  const [order, setOrder] = React.useState<'asc' | 'desc'>('desc')
-  const [orderBy, setOrderBy] = React.useState<keyof Item>('created_date')
+  const {
+    page,
+    rowsPerPage,
+    order,
+    orderBy,
+    search,
+    setTotal,
+    setMode,
+    setOpenAlert,
+  } = useTableStore()
 
   const handleClick = (body: Item | null = null, modes: ActionTable = 'view') => {
     setData(body)
     if (modes === 'delete') {
-      setOpenDelete(true)
+      setOpenAlert(true)
     } else {
       setOpen(true)
       setMode(modes)
@@ -29,42 +28,32 @@ export default function useItem() {
   }
 
   const handleDelete = async () => {
-    try {
-      const res = await fetch(`/api/item/${data?.id}`, {
-        method: 'DELETE',
-      })
-      
-      const result = (await res.json()).message
+    const res = await fetch(`/api/item/${data?.id}`, {
+      method: 'DELETE',
+    })
+    
+    const result = (await res.json()).message
 
-      toast({ description: result, duration: 5000 })
-      deleteItem(data!.id)
-      setData(null)
-    } catch (error) {
-      toast({ description: (error as Error).message, variant: 'warning', duration: 5000 })
-    } finally {
-      setOpenDelete(false)
+    if (!res.ok) {
+      throw new Error(result)
     }
+
+    setData(null)
+    return result
   }
 
   const fetchItems = async () => {
-    if (!search) setLoading(true)
-    try {
-      let url = `/api/item?page=${page + 1}&limit=${rowsPerPage}&order=${orderBy}-${order}`
-      if (search) {
-        const value = JSON.stringify({ 'name-code-description': search })
-        url += `&search=${value}`
-      }
-
-      const res = await fetch(url)
-      const { data, total } = await res.json()
-
-      setItems(data)
-      setTotal(total)
-    } catch (err) {
-      console.error('Error loading items', err)
-    } finally {
-      setLoading(false)
+    let url = `/api/item?page=${page + 1}&limit=${rowsPerPage}&order=${orderBy}-${order}`
+    if (search) {
+      const value = JSON.stringify({ 'name-code-description': search })
+      url += `&search=${value}`
     }
+
+    const res = await fetch(url)
+    const { data, total } = await res.json()
+
+    setTotal(total)
+    return data
   }
 
   return {
@@ -72,27 +61,8 @@ export default function useItem() {
     handleDelete,
     open,
     setOpen,
-    openDelete,
-    setOpenDelete,
-    mode,
-    setMode,
     data,
     setData,
-    loading,
-    setLoading,
-    search,
-    setSearch,
-    page,
-    setPage,
-    rowsPerPage,
-    setRowsPerPage,
-    order,
-    setOrder,
-    orderBy,
-    setOrderBy,
-    items,
-    setItems,
     fetchItems,
-    total,
   }
 }
