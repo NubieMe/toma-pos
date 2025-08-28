@@ -1,27 +1,26 @@
-import { toast } from '@/hooks/use-toast'
-import useMenuStore from '@/store/menu'
+import useTableStore from '@/store/table'
 import { ActionTable } from '@/types/action'
 import { Menu } from '@/types/menu'
-import React from 'react'
+import { useState } from 'react'
 
 export default function useMenu() {
-  const [open, setOpen] = React.useState(false)
-  const [openDelete, setOpenDelete] = React.useState(false)
-  const [mode, setMode] = React.useState<ActionTable>('view')
-  const [data, setData] = React.useState<Menu | null>(null)
-  const [loading, setLoading] = React.useState(false)
-  const { menus, setMenus, deleteMenu } = useMenuStore()
-  const [total, setTotal] = React.useState(0)
-  const [search, setSearch] = React.useState('')
-  const [page, setPage] = React.useState(0)
-  const [rowsPerPage, setRowsPerPage] = React.useState(10)
-  const [order, setOrder] = React.useState<'asc' | 'desc'>('desc')
-  const [orderBy, setOrderBy] = React.useState<keyof Menu>('created_date')
+  const [data, setData] = useState<Menu | null>(null)
+  const [open, setOpen] = useState(false)
+  const {
+    page,
+    rowsPerPage,
+    order,
+    orderBy,
+    search,
+    setTotal,
+    setMode,
+    setOpenAlert,
+  } = useTableStore()
 
   const handleClick = (body: Menu | null = null, modes: ActionTable = 'view') => {
     setData(body)
     if (modes === 'delete') {
-      setOpenDelete(true)
+      setOpenAlert(true)
     } else {
       setOpen(true)
       setMode(modes)
@@ -29,70 +28,41 @@ export default function useMenu() {
   }
 
   const handleDelete = async () => {
-    try {
-      const res = await fetch(`/api/menu/${data?.id}`, {
-        method: 'DELETE',
-      })
-      
-      const result = (await res.json()).message
+    const res = await fetch(`/api/menu/${data?.id}`, {
+      method: 'DELETE',
+    })
 
-      toast({ description: result, duration: 5000 })
-      deleteMenu(data!.id)
-      setData(null)
-    } catch (error) {
-      toast({ description: (error as Error).message, variant: 'warning', duration: 5000 })
-    } finally {
-      setOpenDelete(false)
+    const result = await res.json()
+
+    if (!res.ok) {
+      throw new Error(result.message)
     }
+
+    setData(null)
+    return result
   }
 
   const fetchMenus = async () => {
-    if (!search) setLoading(true)
-    try {
-      let url = `/api/menu?page=${page + 1}&limit=${rowsPerPage}&order=${orderBy}-${order}`
-      if (search) {
-        const value = JSON.stringify({ 'name-icon-path': search })
-        url += `&search=${value}`
-      }
-
-      const res = await fetch(url)
-      const { data, total } = await res.json()
-
-      setMenus(data)
-      setTotal(total)
-    } catch (err) {
-      console.error('Error loading menus', err)
-    } finally {
-      setLoading(false)
+    let url = `/api/menu?page=${page + 1}&limit=${rowsPerPage}&order=${orderBy}-${order}`
+    if (search) {
+      const value = JSON.stringify({ 'name-icon-path': search })
+      url += `&search=${value}`
     }
+
+    const res = await fetch(url)
+    const { data, total } = await res.json()
+
+    setTotal(total)
+    return data
   }
 
   return {
     handleClick,
     handleDelete,
-    open,
-    setOpen,
-    openDelete,
-    setOpenDelete,
-    mode,
-    setMode,
     data,
     setData,
-    loading,
-    setLoading,
-    search,
-    setSearch,
-    page,
-    setPage,
-    rowsPerPage,
-    setRowsPerPage,
-    order,
-    setOrder,
-    orderBy,
-    setOrderBy,
-    menus,
-    setMenus,
     fetchMenus,
-    total,
+    open,
+    setOpen,
   }
 }

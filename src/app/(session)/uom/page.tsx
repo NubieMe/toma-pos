@@ -1,7 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client"
 
-import React from 'react'
 import DataTable from '@/components/table/data-table'
 import { TableColumn } from '@/types/column'
 import { Uom } from '@prisma/client'
@@ -9,24 +8,27 @@ import { format } from 'date-fns'
 import UomModal from './modal'
 import AlertDialog from '@/components/ui/alert'
 import { usePermission } from '@/hooks/use-permission'
-import { Button } from '@mui/material'
+import { Box, Button } from '@mui/material'
 import useUom from './hooks'
 import Search from '@/components/table/search'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import useTableStore from '@/store/table'
+import { useEffect } from 'react'
+import { useDebounce } from '@/hooks/use-debounce'
+import { toast } from '@/hooks/use-toast'
 
 export default function Page() {
+  const queryClient = useQueryClient()
   const { permission } = usePermission()
   const {
-    uoms,
-    loading,
     open,
     setOpen,
-    openDelete,
-    setOpenDelete,
-    mode,
     data,
-    search,
-    setSearch,
     fetchUoms,
+    handleDelete,
+    handleClick,
+  } = useUom()
+  const {
     page,
     setPage,
     rowsPerPage,
@@ -35,10 +37,11 @@ export default function Page() {
     setOrder,
     orderBy,
     setOrderBy,
-    handleDelete,
-    handleClick,
-    total,
-  } = useUom()
+    search,
+    setSearch,
+    setOpenAlert,
+  } = useTableStore()
+  const debounceSearch = useDebounce(search)
 
   const columns: TableColumn<Uom>[] = [
     { key: 'name', label: 'Name' },
@@ -46,24 +49,46 @@ export default function Page() {
     { key: 'created_date', label: 'Created Date', render: (value) => format(value!, 'd MMMM y')},
   ]
 
-  React.useEffect(() => {
-    fetchUoms()
-  }, [page, rowsPerPage, order, orderBy, search])
+  const query = useQuery({
+      queryKey: ['uoms', page, rowsPerPage, order, orderBy, debounceSearch],
+      queryFn: fetchUoms,
+    })
+  
+    const mutation = useMutation({
+      mutationFn: handleDelete,
+      onSuccess: (res) => {
+        toast({ description: res.message, duration: 5000, variant: 'success' })
+        queryClient.invalidateQueries({ queryKey: ['uoms'] })
+      },
+      onError: (err) => {
+        toast({ description: err.message, duration: 5000, variant: 'warning' })
+      },
+      onSettled: () => {
+        setOpenAlert(false)
+      }
+    })
+  
+    useEffect(() => {
+      setSearch('')
+      setPage(0)
+      setOrderBy('created_date')
+      setOrder('desc')
+      setRowsPerPage(10)
+    }, [])
 
   return (
     <>
       <DataTable
         title='Unit of Measurement'
-        loading={loading}
+        loading={query.isPending}
         columns={columns}
-        rows={uoms}
-        total={total}
+        rows={query.data || []}
         rowIdKey='id'
         onActionClick={(action, row) => {
           handleClick(row, action)
         }}
         actions={
-          <div className="flex items-center gap-20">
+          <Box className="flex items-center gap-20">
             <Search
               value={search}
               setValue={setSearch}
@@ -71,19 +96,10 @@ export default function Page() {
             {permission.includes('add') && <Button onClick={() => handleClick(null, 'add')}>
               New
             </Button>}
-          </div>
+          </Box>
         }
-        page={page}
-        setPage={setPage}
-        rowsPerPage={rowsPerPage}
-        setRowsPerPage={setRowsPerPage}
-        order={order}
-        setOrder={setOrder}
-        orderBy={orderBy}
-        setOrderBy={setOrderBy}
       />
       <UomModal
-        mode={mode}
         open={open}
         onClose={() => setOpen(false)}
         initialData={data!}
@@ -91,9 +107,10 @@ export default function Page() {
       <AlertDialog
         title='Delete UOM'
         description='Are you sure you want to delete this UOM?'
-        setOpen={setOpenDelete}
-        open={openDelete}
-        onConfirm={handleDelete}
+        onConfirm={() => {
+          toast({ description: 'Menghapus...', variant: 'info' })
+          mutation.mutate()
+        }}
       />
     </>
   )

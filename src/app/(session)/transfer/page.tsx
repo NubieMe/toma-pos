@@ -5,37 +5,24 @@ import AlertDialog from '@/components/ui/alert'
 import { TableColumn } from '@/types/column'
 import { StockIO } from '@/types/stock'
 import { Box, Button, Paper, Tab, Tabs, Typography } from '@mui/material'
-import React from 'react'
+import React, { useEffect } from 'react'
 import StockIOModal from '@/components/modal/stock-io'
 import useTransfer from './hooks'
 import { format } from 'date-fns'
 import BranchAuto from '@/components/auto-complete/branch'
 import Search from '@/components/table/search'
+import useTableStore from '@/store/table'
+import { useMutation, useQueries, useQueryClient } from '@tanstack/react-query'
+import { toast } from '@/hooks/use-toast'
 
 export default function Page() {
+  const queryClient = useQueryClient()
   const {
-    transferIn,
-    transferOut,
-    loading,
     open,
     setOpen,
-    openDelete,
-    setOpenDelete,
     fetchTransfers,
-    pageIn,
-    setPageIn,
-    pageOut,
-    setPageOut,
-    rowsPerPage,
-    setRowsPerPage,
-    order,
-    setOrder,
-    orderBy,
-    setOrderBy,
     handleDelete,
     handleClick,
-    totalIn,
-    totalOut,
     activeTab,
     setActiveTab,
     fromBranchOut,
@@ -46,10 +33,21 @@ export default function Page() {
     setFromBranchIn,
     toBranchIn,
     setToBranchIn,
+    permission,
+    pageIn,
+    pageOut,
+  } = useTransfer()
+  const {
+    rowsPerPage,
+    setRowsPerPage,
+    order,
+    setOrder,
+    orderBy,
+    setOrderBy,
     search,
     setSearch,
-    permission,
-  } = useTransfer()
+    setOpenAlert,
+  } = useTableStore()
 
   // Common columns for both transfer in and out
   const columns: TableColumn<StockIO>[] = [
@@ -97,16 +95,44 @@ export default function Page() {
     },
   ]
 
-  React.useEffect(() => {
-    fetchTransfers('out')
-    fetchTransfers('in')
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pageIn, pageOut, rowsPerPage, order, orderBy, search, 
-      fromBranchOut, toBranchOut, fromBranchIn, toBranchIn])
-
   const handleTabChange = (event: React.SyntheticEvent, newValue: 'in' | 'out') => {
     setActiveTab(newValue)
   }
+  
+  const [queryIn, queryOut]= useQueries({
+    queries: [
+      {
+        queryKey: ['transfers-in', pageIn, rowsPerPage, order, orderBy, search, fromBranchIn, toBranchIn],
+        queryFn: () => fetchTransfers('in'),
+      },
+      {
+        queryKey: ['transfers-out', pageOut, rowsPerPage, order, orderBy, search, fromBranchOut, toBranchOut],
+        queryFn: () => fetchTransfers('out'),
+      },
+    ]
+  })
+
+  const mutation = useMutation({
+    mutationFn: handleDelete,
+    onSuccess: (res) => {
+      toast({ description: res.message, duration: 5000, variant: 'success' })
+      queryClient.invalidateQueries({ queryKey: ['transfers-' + res.activeTab] })
+    },
+    onError: (err) => {
+      toast({ description: err.message, duration: 5000, variant: 'warning' })
+    },
+    onSettled: () => {
+      setOpenAlert(false)
+    }
+  })
+
+  useEffect(() => {
+    setSearch('')
+    setOrderBy('created_date')
+    setOrder('desc')
+    setRowsPerPage(10)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <Box sx={{ p: 3 }}>
@@ -201,38 +227,20 @@ export default function Page() {
         {activeTab === 'out' ? (
           <DataTable
             title=''
-            loading={loading.out}
+            loading={queryOut.isPending}
             columns={columns}
-            rows={transferOut}
-            total={totalOut}
+            rows={queryOut.data || []}
             rowIdKey="id"
             onActionClick={(action, row) => handleClick(row, action)}
-            page={pageOut}
-            setPage={setPageOut}
-            rowsPerPage={rowsPerPage}
-            setRowsPerPage={setRowsPerPage}
-            order={order}
-            setOrder={setOrder}
-            orderBy={orderBy}
-            setOrderBy={setOrderBy}
           />
         ) : (
           <DataTable
             title=''
-            loading={loading.in}
+            loading={queryIn.isPending}
             columns={columns}
-            rows={transferIn}
-            total={totalIn}
+            rows={queryIn.data || []}
             rowIdKey="id"
             onActionClick={(action, row) => handleClick(row, action)}
-            page={pageIn}
-            setPage={setPageIn}
-            rowsPerPage={rowsPerPage}
-            setRowsPerPage={setRowsPerPage}
-            order={order}
-            setOrder={setOrder}
-            orderBy={orderBy}
-            setOrderBy={setOrderBy}
           />
         )}
       </Paper>
@@ -247,9 +255,10 @@ export default function Page() {
       <AlertDialog
         title="Delete Transfer"
         description="Are you sure you want to delete this transfer record?"
-        setOpen={setOpenDelete}
-        open={openDelete}
-        onConfirm={handleDelete}
+        onConfirm={() => {
+          toast({ description: 'Menghapus...', duration: 5000, variant: 'info' })
+          mutation.mutate()
+        }}
       />
     </Box>
   )

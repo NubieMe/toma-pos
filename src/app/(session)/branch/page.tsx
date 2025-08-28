@@ -4,27 +4,29 @@ import DataTable from '@/components/table/data-table'
 import { usePermission } from '@/hooks/use-permission'
 import { TableColumn } from '@/types/column'
 import { Branch } from '@/types/branch'
-import React from 'react'
+import React, { useEffect } from 'react'
 import useBranch from './hooks'
 import Search from '@/components/table/search'
-import { Button } from '@mui/material'
+import { Box, Button, Icon, IconButton, Tooltip } from '@mui/material'
 import AlertDialog from '@/components/ui/alert'
 import BranchModal from './modal'
+import useTableStore from '@/store/table'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useDebounce } from '@/hooks/use-debounce'
+import { toast } from '@/hooks/use-toast'
 
 export default function Page() {
+  const queryClient = useQueryClient()
   const { permission } = usePermission()
   const {
-    branches,
-    loading,
+    data,
+    fetchBranches,
+    handleDelete,
+    handleClick,
     open,
     setOpen,
-    openDelete,
-    setOpenDelete,
-    mode,
-    data,
-    search,
-    setSearch,
-    fetchBranches,
+  } = useBranch()
+  const {
     page,
     setPage,
     rowsPerPage,
@@ -33,10 +35,11 @@ export default function Page() {
     setOrder,
     orderBy,
     setOrderBy,
-    handleDelete,
-    handleClick,
-    total,
-  } = useBranch()
+    search,
+    setSearch,
+    setOpenAlert,
+  } = useTableStore()
+  const debounceSearch = useDebounce(search)
 
   const columns: TableColumn<Branch>[] = [
     { key: 'name', label: 'Name' },
@@ -46,45 +49,75 @@ export default function Page() {
     { key: 'coordinate', label: 'Coordinate', render: (value) => Array.isArray(value) && value?.map(val => String(val)).join(', ') },
   ]
 
-  React.useEffect(() => {
-    fetchBranches()
+  const query = useQuery({
+    queryKey: ['branches', page, rowsPerPage, order, orderBy, debounceSearch],
+    queryFn: fetchBranches,
+  })
+
+  const mutation = useMutation({
+    mutationFn: handleDelete,
+    onSuccess: (res) => {
+      toast({ description: res.message, duration: 5000, variant: 'success' })
+      queryClient.invalidateQueries({ queryKey: ['branches'] })
+    },
+    onError: (err) => {
+      toast({ description: err.message, duration: 5000, variant: 'warning' })
+    },
+    onSettled: () => {
+      setOpenAlert(false)
+    }
+  })
+
+  useEffect(() => {
+    setSearch('')
+    setPage(0)
+    setOrderBy('created_date')
+    setOrder('desc')
+    setRowsPerPage(10)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, rowsPerPage, order, orderBy, search])
+  }, [])
 
   return (
     <>
       <DataTable
         title='Branch'
-        loading={loading}
+        loading={query.isPending}
         columns={columns}
-        rows={branches}
-        total={total}
+        rows={query.data || []}
         rowIdKey='id'
         onActionClick={(action, row) => {
           handleClick(row, action)
         }}
         actions={
-          <div className="flex items-center gap-20">
+          <Box className="flex items-center gap-20">
             <Search
               value={search}
               setValue={setSearch}
               />
-            {permission.includes('add') && <Button onClick={() => handleClick(null, 'add')}>
-              New
-            </Button>}
-          </div>
+            <Box className="flex gap-2">
+              <Tooltip title="Refresh">
+                <IconButton
+                  onClick={() => {
+                    setSearch('')
+                    setPage(0)
+                    setOrderBy('created_date')
+                    setOrder('desc')
+                    query.refetch()
+                  }}
+                >
+                  <Icon>refresh</Icon>
+                </IconButton>
+              </Tooltip>
+              {permission.includes('add') && 
+                <Button onClick={() => handleClick(null, 'add')}>
+                  New
+                </Button>
+              }
+            </Box>
+          </Box>
         }
-        page={page}
-        setPage={setPage}
-        rowsPerPage={rowsPerPage}
-        setRowsPerPage={setRowsPerPage}
-        order={order}
-        setOrder={setOrder}
-        orderBy={orderBy}
-        setOrderBy={setOrderBy}
       />
       <BranchModal
-        mode={mode}
         open={open}
         onClose={() => setOpen(false)}
         initialData={data!}
@@ -92,9 +125,10 @@ export default function Page() {
       <AlertDialog
         title='Delete Branch'
         description='Anda yakin ingin menghapus Branch ini?'
-        setOpen={setOpenDelete}
-        open={openDelete}
-        onConfirm={handleDelete}
+        onConfirm={() => {
+          toast({ description: 'Menghapus...', duration: 5000, variant: 'info' })
+          mutation.mutate()
+        }}
       />
     </>
   )

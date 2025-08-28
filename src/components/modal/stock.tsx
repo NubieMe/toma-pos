@@ -2,7 +2,6 @@ import { Stock } from '@/types/stock'
 import EntityModal from '@/components/modal'
 import { Controller, useForm } from 'react-hook-form'
 import {
-  AlertColor,
   Autocomplete,
   Checkbox,
   FormControl,
@@ -13,34 +12,35 @@ import {
 } from '@mui/material'
 import { stockSchema } from '../../app/(session)/product/schema'
 import { z } from 'zod'
-import useStockStore from '@/store/stock'
-import React from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from '@/hooks/use-toast'
-import useItem from '../../app/(session)/item/hooks'
-import useBranch from '../../app/(session)/branch/hooks'
 import { convertNumber, parseNumber, toCurrencyFormat } from '@/utils/helper'
-import { ActionTable } from '@/types/action'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import useTableStore from '@/store/table'
+import useItem from '@/hooks/use-item'
+import useBranch from '@/hooks/use-branch'
+import { useEffect, useState } from 'react'
+import { Item } from '@/types/item'
+import { Branch } from '@/types/branch'
 
 interface Props {
   open: boolean
   onClose: () => void
-  mode: ActionTable
   initialData?: Partial<Stock>
 }
 
 export default function StockModal({
   open,
   onClose,
-  mode,
   initialData,
 }: Props) {
-  const [displayQty, setDisplayQty] = React.useState('0')
-  const [displayPrice, setDisplayPrice] = React.useState('0')
+  const queryClient = useQueryClient()
+  const { mode } = useTableStore()
+  const [displayQty, setDisplayQty] = useState('0')
+  const [displayPrice, setDisplayPrice] = useState('0')
   const disabled = mode === 'view'
-  const { editStock } = useStockStore()
-  const { items, fetchItems } = useItem()
-  const { branches, fetchBranches } = useBranch()
+  const { query: itemsQuery } = useItem()
+  const { query: branchesQuery } = useBranch()
 
   const { handleSubmit, reset, control } = useForm<z.infer<typeof stockSchema>>({
     resolver: zodResolver(stockSchema),
@@ -55,9 +55,11 @@ export default function StockModal({
     },
   })
   
-  React.useEffect(() => {
-    fetchItems()
-    fetchBranches()
+  useEffect(() => {
+    if (open) {
+      itemsQuery.refetch()
+      branchesQuery.refetch()
+    }
 
     reset({
       item_id: initialData?.item_id || '',
@@ -71,30 +73,37 @@ export default function StockModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initialData, reset])
 
-  const onSubmit = handleSubmit(async (body) => {
-    try {
-      const url = `/api/stock/${initialData?.id}`
-      const res = await fetch(url, {
-        method: 'PATCH',
-        body: JSON.stringify(body),
-      })
-      const parsed = (await res.json())
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const upsertStock = async (body: any) => {
+    const url = `/api/stock/${initialData?.id}`
+    const res = await fetch(url, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    })
+    const result = await res.json()
 
-      let variant: AlertColor = 'warning'
-      if (parsed) {
-        editStock(parsed.data)
-
-        variant = 'success'
-      }
-      toast({ description: parsed.message, variant })
-    } catch (error) {
-      toast({
-        description: (error as Error).message,
-        variant: 'error',
-      })
+    if (!res.ok) {
+      throw new Error(result.message)
     }
-    
-    onClose()
+
+    return result
+  }
+
+  const mutation = useMutation({
+    mutationFn: upsertStock,
+    onSuccess: (res) => {
+      toast({ description: res.message, duration: 5000, variant: 'success' })
+      queryClient.invalidateQueries({ queryKey: ['non-products', 'products'] })
+      onClose()
+    },
+    onError: (err) => {
+      toast({ description: err.message, duration: 5000, variant: 'warning' })
+    },
+  })
+
+  const onSubmit = handleSubmit(async (body) => {
+    toast({ variant: 'info', description: 'Menyimpan...' })
+    mutation.mutate(body)
   })
 
   return (
@@ -115,13 +124,13 @@ export default function StockModal({
               <FormControl>
                 <Autocomplete
                   disabled
-                  options={items}
+                  options={itemsQuery.data || []}
                   size='small'
                   getOptionLabel={(option) => option.name}
                   isOptionEqualToValue={(option, value) => option.id === value.id}
-                  value={items.find(i => i.id === field.value) || null}
+                  value={itemsQuery.data?.find((i: Item) => i.id === field.value) || null}
                   onChange={(_, newValue) => field.onChange(newValue?.id || '')}
-                  renderInput={(params) => <TextField {...params} label="Parent" size='small' variant='standard' />}
+                  renderInput={(params) => <TextField {...params} label="Parent" size='small' />}
                 />
   
                 <FormHelperText>{fieldState.error?.message}</FormHelperText>
@@ -137,13 +146,13 @@ export default function StockModal({
               <FormControl>
                 <Autocomplete
                   disabled
-                  options={branches}
+                  options={branchesQuery.data || []}
                   size='small'
                   getOptionLabel={(option) => option.name}
                   isOptionEqualToValue={(option, value) => option.id === value.id}
-                  value={branches.find(b => b.id === field.value) || null}
+                  value={branchesQuery.data?.find((b: Branch) => b.id === field.value) || null}
                   onChange={(_, newValue) => field.onChange(newValue?.id || '')}
-                  renderInput={(params) => <TextField {...params} label="Branch" size='small' variant='standard' />}
+                  renderInput={(params) => <TextField {...params} label="Branch" size='small' />}
                 />
   
                 <FormHelperText>{fieldState.error?.message}</FormHelperText>

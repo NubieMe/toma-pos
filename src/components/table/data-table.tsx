@@ -27,6 +27,7 @@ import RowActions from "./actions";
 import { ActionTable } from "@/types/action";
 import { usePermission } from "@/hooks/use-permission";
 import NoData from "../empty/no-data";
+import useTableStore from "@/store/table";
 
 function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
   if (b[orderBy] < a[orderBy]) return -1;
@@ -53,15 +54,6 @@ interface DataTableProps<T extends Record<string, any>> {
   actions?: React.ReactNode;
   onActionClick?: (action: ActionTable, row: T) => void;
   loading: boolean;
-  order: "asc" | "desc";
-  setOrder: React.Dispatch<React.SetStateAction<"asc" | "desc">>;
-  orderBy: keyof T;
-  setOrderBy: React.Dispatch<React.SetStateAction<keyof T>>;
-  page: number;
-  setPage: React.Dispatch<React.SetStateAction<number>>;
-  rowsPerPage: number;
-  setRowsPerPage: React.Dispatch<React.SetStateAction<number>>;
-  total: number;
 }
 
 // Component untuk custom pagination dengan nomor halaman
@@ -201,17 +193,19 @@ export default function DataTable<T extends Record<string, any>>({
   actions,
   onActionClick,
   loading,
-  order,
-  setOrder,
-  orderBy,
-  setOrderBy,
-  page,
-  setPage,
-  rowsPerPage,
-  setRowsPerPage,
-  total,
 }: DataTableProps<T>) {
   const { permission } = usePermission();
+  const {
+    order,
+    setOrder,
+    orderBy,
+    setOrderBy,
+    page,
+    setPage,
+    rowsPerPage,
+    setRowsPerPage,
+    total,
+  } = useTableStore()
   const [selected, setSelected] = React.useState<readonly (string | number)[]>(
     []
   );
@@ -224,7 +218,7 @@ export default function DataTable<T extends Record<string, any>>({
   ) => {
     const isAsc = orderBy === property && order === "asc";
     setOrder(isAsc ? "desc" : "asc");
-    setOrderBy(property);
+    setOrderBy(property as string);
   };
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

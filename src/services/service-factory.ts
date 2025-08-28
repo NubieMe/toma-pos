@@ -99,7 +99,7 @@ export class ServiceFactory {
       } else if (key.includes('-')) {
         const fields = key.split('-')
 
-        where.OR = fields.map(f => ({ [f]: { contains: search[key] } }))
+        where.OR = fields.map(f => ({ [f]: { contains: search[key], mode: 'insensitive' } }))
       } else if (key === 'start_date') {
         if (where['created_date']) where['created_date'] = { ...where['created_date'], gte: search[key] }
         else where['created_date'] = { gte: search[key] }
@@ -121,7 +121,7 @@ export class ServiceFactory {
             currentLevel = currentLevel[field];
           }
 
-          currentLevel[lastField] = { contains: search[key] };
+          currentLevel[lastField] = { contains: search[key], mode: 'insensitive' };
         } else {
           where[key] = search[key]
         }

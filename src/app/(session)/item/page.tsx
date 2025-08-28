@@ -6,29 +6,29 @@ import AlertDialog from "@/components/ui/alert"
 import { usePermission } from "@/hooks/use-permission"
 import { TableColumn } from "@/types/column"
 import { Item } from "@/types/item"
-import { Button, Icon, IconButton, Tooltip } from "@mui/material"
-import React from "react"
+import { Box, Button, Icon, IconButton, Tooltip } from "@mui/material"
+import React, { useEffect } from "react"
 import useItem from "./hooks"
 import ItemModal from "./modal"
 import Search from "@/components/table/search"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import useTableStore from "@/store/table"
+import { useDebounce } from "@/hooks/use-debounce"
+import { toast } from "@/hooks/use-toast"
 
 export default function Page() {
+  const queryClient = useQueryClient()
   const { permission } = usePermission()
   const {
-    items,
-    loading,
     open,
     setOpen,
-    openDelete,
-    setOpenDelete,
-    mode,
     data,
     setData,
-    search,
-    setSearch,
     handleClick,
     handleDelete,
     fetchItems,
+  } = useItem()
+  const {
     page,
     setPage,
     rowsPerPage,
@@ -37,8 +37,11 @@ export default function Page() {
     setOrder,
     orderBy,
     setOrderBy,
-    total,
-  } = useItem()
+    search,
+    setSearch,
+    setOpenAlert,
+  } = useTableStore()
+  const debounceSearch = useDebounce(search)
 
   const columns: TableColumn<Item>[] = [
     { key: 'name', label: 'Name' },
@@ -47,27 +50,49 @@ export default function Page() {
     { key: 'uom', label: 'UOM', render: (val) => val ? (val as Item['uom']).name : '' },
     { key: 'category', label: 'Category', render: (val) => val ? (val as Item['category']).name : '' },
   ]
+
+  const query = useQuery({
+    queryKey: ['items', page, rowsPerPage, order, orderBy, debounceSearch],
+    queryFn: fetchItems,
+  })
+
+  const mutation = useMutation({
+    mutationFn: handleDelete,
+    onSuccess: (res) => {
+      toast({ description: res.message, duration: 5000, variant: 'success' })
+      queryClient.invalidateQueries({ queryKey: ['items'] })
+    },
+    onError: (err) => {
+      toast({ description: err.message, duration: 5000, variant: 'warning' })
+    },
+    onSettled: () => {
+      setOpenAlert(false)
+    }
+  })
   
-  React.useEffect(() => {
-    fetchItems()
-  }, [search, page, rowsPerPage, order, orderBy])
+  useEffect(() => {
+    setSearch('')
+    setPage(0)
+    setOrderBy('created_date')
+    setOrder('desc')
+    setRowsPerPage(10)
+  }, [])
 
   return (
     <>
       <DataTable
-        loading={loading}
+        loading={query.isPending}
         columns={columns}
-        rows={items}
-        total={total}
+        rows={query.data || []}
         title="Item Management"
         rowIdKey="id"
         actions={
-          <div className="flex items-center gap-20">
+          <Box className="flex items-center gap-20">
             <Search
               value={search}
               setValue={setSearch}
             />
-            <div className="flex gap-2">
+            <Box className="flex gap-2">
               <Tooltip title="Refresh">
                 <IconButton
                   onClick={() => {
@@ -75,7 +100,7 @@ export default function Page() {
                     setPage(0)
                     setOrderBy('created_date')
                     setOrder('desc')
-                    fetchItems()
+                    query.refetch()
                   }}
                 >
                   <Icon>refresh</Icon>
@@ -86,34 +111,27 @@ export default function Page() {
                   New
                 </Button>
               }
-            </div>
-          </div>
+            </Box>
+          </Box>
         }
         onActionClick={(action, row) => {
           if (action === 'delete') {
-            setOpenDelete(true)
+            setOpenAlert(true)
             setData(row)
           } else {
             handleClick(row, action)
           }
         }}
-        order={order}
-        setOrder={setOrder}
-        orderBy={orderBy}
-        setOrderBy={setOrderBy}
-        page={page}
-        setPage={setPage}
-        rowsPerPage={rowsPerPage}
-        setRowsPerPage={setRowsPerPage}
       />
       <AlertDialog
         title="Delete Item"
-        description="Are you sure you want to delete this item?"
-        onConfirm={() => handleDelete()}
-        open={openDelete}
-        setOpen={setOpenDelete}
+        description="Anda yakin ingin menghapus Item ini?"
+        onConfirm={() => {
+          toast({ description: 'Menghapus...', duration: 5000, variant: 'info' })
+          mutation.mutate()
+        }}
       />
-      <ItemModal open={open} mode={mode} onClose={() => setOpen(false)} initialData={data!} />
+      <ItemModal open={open} onClose={() => setOpen(false)} initialData={data!} />
     </>
   )
 }

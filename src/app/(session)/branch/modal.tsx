@@ -2,36 +2,36 @@ import { Branch } from '@/types/branch'
 import EntityModal from '@/components/modal'
 import { Controller, useForm } from 'react-hook-form'
 import {
-  AlertColor,
   Stack,
   TextField,
 } from '@mui/material'
 import { branchSchema } from './schema'
 import { z } from 'zod'
-import useBranchStore from '@/store/branch'
-import React from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from '@/hooks/use-toast'
 import MapPicker from '@/components/map-picker'
-import { ActionTable } from '@/types/action'
+import useTableStore from '@/store/table'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useEffect } from 'react'
 
 interface Props {
   open: boolean
   onClose: () => void
-  mode: ActionTable
   initialData?: Partial<Branch>
 }
 
 export default function BranchModal({
   open,
   onClose,
-  mode,
   initialData,
 }: Props) {
+  const queryClient = useQueryClient()
+  const { mode } = useTableStore()
   const disabled = mode === 'view'
-  const { addBranch, editBranch } = useBranchStore()
 
   const { handleSubmit, reset, control } = useForm<z.infer<typeof branchSchema>>({
+    mode: 'onBlur',
+    reValidateMode: 'onBlur',
     resolver: zodResolver(branchSchema),
     defaultValues: {
       code: '',
@@ -42,7 +42,7 @@ export default function BranchModal({
     },
   })
 
-  React.useEffect(() => {
+  useEffect(() => {
     reset({
       code: initialData?.code || '',
       name: initialData?.name || '',
@@ -52,32 +52,37 @@ export default function BranchModal({
     })
   }, [open, initialData, reset])
 
-  const onSubmit = handleSubmit(async (body) => {
-    try {
-      const url = mode === 'add' ? '/api/branch' : `/api/branch/${initialData?.id}`
-      const res = await fetch(url, {
-        method: mode === 'add' ? 'POST' : 'PATCH',
-        body: JSON.stringify(body),
-      })
-      const parsed = (await res.json())
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const upsertBranch = async (body: any) => {
+    const url = mode === 'add' ? '/api/branch' : `/api/branch/${initialData?.id}`
+    const res = await fetch(url, {
+      method: mode === 'add' ? 'POST' : 'PATCH',
+      body: JSON.stringify(body),
+    })
+    const result = (await res.json())
 
-      let variant: AlertColor = 'warning'
-      if (parsed.data) {
-        if (mode === 'add') addBranch(parsed.data)
-        else editBranch(parsed.data)
-
-        variant = 'success'
-      }
-
-      toast({ description: parsed.message, variant })
-    } catch (error) {
-      toast({
-        description: (error as Error).message,
-        variant: 'warning',
-      })
+    if (!res.ok) {
+      throw new Error(result.message)
     }
 
-    onClose()
+    return result
+  }
+
+  const mutation = useMutation({
+    mutationFn: upsertBranch,
+    onSuccess: (res) => {
+      toast({ description: res.message, duration: 5000, variant: 'success' })
+      queryClient.invalidateQueries({ queryKey: ['branches'] })
+      onClose()
+    },
+    onError: (err) => {
+      toast({ description: err.message, duration: 5000, variant: 'warning' })
+    },
+  })
+
+  const onSubmit = handleSubmit(async (body) => {
+    toast({ variant: 'info', description: 'Menyimpan...' })
+    mutation.mutate(body)
   })
 
   return (

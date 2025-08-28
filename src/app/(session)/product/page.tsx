@@ -5,23 +5,27 @@ import DataTable from '@/components/table/data-table'
 import AlertDialog from '@/components/ui/alert'
 import { TableColumn } from '@/types/column'
 import { Stock } from '@/types/stock'
-import React from 'react'
+import React, { useEffect } from 'react'
 import StockModal from '../../../components/modal/stock'
 import useStock from './hooks'
+import useTableStore from '@/store/table'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Box } from '@mui/material'
+import { toast } from '@/hooks/use-toast'
 
 export default function Page() {
+  const queryClient = useQueryClient()
   const {
-    stocks,
-    loading,
     open,
     setOpen,
-    openDelete,
-    setOpenDelete,
-    mode,
     data,
     branches,
     setBranches,
     fetchStocks,
+    handleDelete,
+    handleClick,
+  } = useStock()
+  const {
     page,
     setPage,
     rowsPerPage,
@@ -30,10 +34,8 @@ export default function Page() {
     setOrder,
     orderBy,
     setOrderBy,
-    handleDelete,
-    handleClick,
-    total,
-  } = useStock()
+    setOpenAlert,
+  } = useTableStore()
 
   const columns: TableColumn<Stock>[] = [
     { key: 'item', label: 'Item', render: (value) => (value as Stock['item']).name },
@@ -42,42 +44,54 @@ export default function Page() {
     { key: 'vendible', label: 'Untuk Dijual?', render: (value) => (value ? 'Ya' : 'Tidak') },
   ]
 
-  React.useEffect(() => {
-    fetchStocks()
+  const query = useQuery({
+    queryKey: ['products', page, rowsPerPage, order, orderBy, branches],
+    queryFn: fetchStocks,
+  })
+
+  const mutation = useMutation({
+    mutationFn: handleDelete,
+    onSuccess: (res) => {
+      toast({ description: res.message, duration: 5000, variant: 'success' })
+      queryClient.invalidateQueries({ queryKey: ['products'] })
+    },
+    onError: (err) => {
+      toast({ description: err.message, duration: 5000, variant: 'warning' })
+    },
+    onSettled: () => {
+      setOpenAlert(false)
+    }
+  })
+
+  useEffect(() => {
+    setPage(0)
+    setOrderBy('created_date')
+    setOrder('desc')
+    setRowsPerPage(10)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, rowsPerPage, order, orderBy, branches])
+  }, [])
 
   return (
     <>
       <DataTable
         title='Product Stock Management'
-        loading={loading}
+        loading={query.isPending}
         columns={columns}
-        rows={stocks}
-        total={total}
+        rows={query.data || []}
         rowIdKey='id'
         onActionClick={(action, row) => {
           handleClick(row, action)
         }}
         actions={
-          <div className="flex items-center gap-20">
+          <Box className="flex items-center gap-20">
             <BranchAuto
               value={branches}
               setValue={setBranches}
             />
-          </div>
+          </Box>
         }
-        page={page}
-        setPage={setPage}
-        rowsPerPage={rowsPerPage}
-        setRowsPerPage={setRowsPerPage}
-        order={order}
-        setOrder={setOrder}
-        orderBy={orderBy}
-        setOrderBy={setOrderBy}
       />
       <StockModal
-        mode={mode}
         open={open}
         onClose={() => setOpen(false)}
         initialData={data!}
@@ -85,9 +99,10 @@ export default function Page() {
       <AlertDialog
         title='Delete Stock Product'
         description='Anda yakin ingin menghapus Stock Product ini?'
-        setOpen={setOpenDelete}
-        open={openDelete}
-        onConfirm={handleDelete}
+        onConfirm={() => {
+          toast({ description: 'Menghapus...', duration: 5000, variant: 'info' })
+          mutation.mutate()
+        }}
       />
     </>
   )
