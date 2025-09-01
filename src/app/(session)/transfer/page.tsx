@@ -38,6 +38,7 @@ export default function Page() {
     pageOut,
   } = useTransfer()
   const {
+    setPage,
     rowsPerPage,
     setRowsPerPage,
     order,
@@ -128,6 +129,7 @@ export default function Page() {
 
   useEffect(() => {
     setSearch('')
+    setPage(0)
     setOrderBy('created_date')
     setOrder('desc')
     setRowsPerPage(10)

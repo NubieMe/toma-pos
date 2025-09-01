@@ -103,8 +103,10 @@ export default function useTransfer() {
 
     if (type === 'in') {
       setTotalIn(total)
+      setTotal(total)
     } else {
       setTotalOut(total)
+      setTotal(total)
     }
 
     return data
