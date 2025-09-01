@@ -6,11 +6,12 @@ import { ChargesDialog } from "./components/charges-dialog"
 import { CheckoutDialog } from "./components/checkout-dialog"
 import { ProductList } from "./components/product-list"
 import { useCashier } from "./hooks"
+import useBranch from "@/hooks/use-branch"
+import { Branch } from "@/types/branch"
 
 export default function CashierPage() {
   const {
     // State
-    branches,
     selectedBranch,
     cart,
     charges,
@@ -45,6 +46,9 @@ export default function CashierPage() {
     getTotalAmount,
     formatCurrency,
   } = useCashier()
+  const {
+    query
+  } = useBranch()
 
   return (
     <Box sx={{ p: 3 }}>
@@ -56,16 +60,16 @@ export default function CashierPage() {
           {hasFilterPermission ? (
             <FormControl size="small" sx={{ minWidth: 200, mt: -2 }}>
               <Autocomplete
-                options={branches}
+                options={query.data || []}
                 getOptionLabel={(option) => option.name}
-                value={branches.find((b) => b.id === selectedBranch)}
+                value={query.data?.find((b: Branch) => b.id === selectedBranch)}
                 onChange={(_, newValue) => setSelectedBranch(newValue?.id || "")}
                 renderInput={(params) => <TextField {...params} label="Branch" size="small" />}
               />
             </FormControl>
           ) : (
             <Typography variant="body2" sx={{ px: 2, py: 1, borderRadius: 1 }}>
-              Branch: {branches.find((b) => b.id === selectedBranch)?.name || "Loading..."}
+              Branch: {query.data?.find((b: Branch) => b.id === selectedBranch)?.name || "Loading..."}
             </Typography>
           )}
 
