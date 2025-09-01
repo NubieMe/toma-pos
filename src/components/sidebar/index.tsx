@@ -1,15 +1,13 @@
 "use client";
 
-import React, { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Drawer,
-  IconButton,
   List,
   ListItemText,
   useMediaQuery,
   Toolbar,
   Divider,
-  // Icon,
   Box,
   Avatar,
 } from "@mui/material";
@@ -21,7 +19,7 @@ import useMenuStore from "@/store/menu";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
 import { useCompany } from "@/hooks/use-company";
-import SidebarIcon from "../icon/sidebar-icon";
+import useSidebarStore from "@/hooks/use-sidebar";
 
 const drawerWidth = 260;
 const collapsedWidth = 60;
@@ -30,11 +28,15 @@ const Sidebar = () => {
   const auth = useAuth();
   const theme = useTheme();
   const pathname = usePathname();
+  const { 
+    open,
+    mobileOpen,
+    toggleMobileOpen,
+    setOpenMenu,
+  } = useSidebarStore();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-  const [loading, setLoading] = React.useState(false);
-  const [openMenu, setOpenMenu] = React.useState<string | null>(null);
-  const [open, setOpen] = React.useState(!isMobile);
-  const { sidebar, setSidebar, setActiveMenu } = useMenuStore();
+  const [loading, setLoading] = useState(false);
+  const { sidebar, setSidebar } = useMenuStore();
   const { company, fetchCompany } = useCompany();
 
   useEffect(() => {
@@ -42,16 +44,12 @@ const Sidebar = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const isActive = React.useCallback(
+  const isActive = useCallback(
     (url: string) => pathname.startsWith(url),
     [pathname]
   );
 
-  const handleToggle = (id: string) => {
-    setOpenMenu((prev) => (prev === id ? null : id));
-  };
-
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchMenus = async () => {
       try {
         setLoading(true);
@@ -70,56 +68,39 @@ const Sidebar = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sidebar.length, sidebar, loading, auth.user]);
 
-  React.useEffect(() => {
-    setOpen(!isMobile);
-  }, [isMobile]);
-
-  React.useEffect(() => {
-    const findActiveParent = (menus: Menu[]): string | null => {
-      for (const menu of menus) {
-        if (menu.children?.length) {
-          if (isChildActive(menu.children, isActive)) {
-            return menu.id;
-          }
-        }
-      }
-      return null;
-    };
-
-    if (!openMenu && sidebar.length > 0) {
-      const activeParent = findActiveParent(sidebar);
-      if (activeParent) setOpenMenu(activeParent);
-    }
-  }, [sidebar, isActive, openMenu]);
-
-  React.useEffect(() => {
-    const findOpenParent = (
-      menus: Menu[],
-      currentPath: string
-    ): string | null => {
+  useEffect(() => {
+    const expandActiveMenus = (menus: Menu[], acc: string[] = []): string[] => {
       for (const menu of menus) {
         const fullPath = `/${menu.path || ""}`;
+
         if (menu.children?.length) {
-          const found = findOpenParent(menu.children, currentPath);
-          if (found) return menu.id;
-        } else {
-          if (fullPath === currentPath) {
-            return null;
+          if (isChildActive(menu.children, isActive) || fullPath === pathname) {
+            acc.push(menu.id);
+            expandActiveMenus(menu.children, acc);
           }
         }
+
+        if (fullPath === pathname) {
+          acc.push(menu.id);
+        }
       }
-      return null;
+      return acc;
     };
 
-    const parentToOpen = findOpenParent(sidebar, pathname);
-    setOpenMenu(parentToOpen);
-  }, [pathname, sidebar]);
+    if (sidebar.length > 0) {
+      setOpenMenu(expandActiveMenus(sidebar));
+    }
+  }, [pathname, sidebar, isActive, setOpenMenu]);
 
   return (
     <>
       <Drawer
-        variant="permanent"
-        open={open}
+        variant={isMobile ? "temporary" : "permanent"}
+        open={isMobile ? mobileOpen : open}
+        onClose={toggleMobileOpen}
+        ModalProps={{
+          keepMounted: true,
+        }}
         slotProps={{
           paper: {
             sx: {
@@ -141,7 +122,7 @@ const Sidebar = () => {
             px: 2,
           }}
         >
-          {open && (
+          {/* {open && ( */}
             <Link href="/dashboard">
               {company?.logo ? (
                 <Box>
@@ -153,21 +134,19 @@ const Sidebar = () => {
                     sx={{ width: 30, height: 30 }}
                   />
                 </Box>
-              ) : (
+              ) : open && (
                 <ListItemText
                   primary="Toma POS"
-                  primaryTypographyProps={{
-                    fontSize: 20,
-                    fontWeight: "bold",
+                  slotProps={{
+                    primary: {
+                      fontSize: 20,
+                      fontWeight: "bold",
+                    }
                   }}
                 />
               )}
             </Link>
-          )}
-          <IconButton onClick={() => setOpen((prev) => !prev)}>
-            {/* <Icon>{open ? "left_panel_close" : "right_panel_close"}</Icon> */}
-            <SidebarIcon width={20} height={20} />
-          </IconButton>
+          {/* )} */}
         </Toolbar>
 
         <Divider />
@@ -176,10 +155,7 @@ const Sidebar = () => {
             <NavRenderer
               menus={sidebar as Menu[]}
               isActive={isActive}
-              openMenu={openMenu}
-              onToggle={handleToggle}
               sidebarOpen={open}
-              setActiveMenu={setActiveMenu}
             />
           )}
         </List>

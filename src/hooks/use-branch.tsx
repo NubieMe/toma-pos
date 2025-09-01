@@ -3,8 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 export default function useBranch() {
   async function fetchBranches() {
     const res = await fetch("/api/branch?limit=10000");
-    const { data } = await res.json();
-    return data
+    return (await res.json()).data;
   }
 
   const query = useQuery({

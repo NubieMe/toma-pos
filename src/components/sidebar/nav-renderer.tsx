@@ -12,7 +12,6 @@ import {
   Menu,
   MenuItem,
   Divider,
-  // Paper,
   Tooltip,
 } from "@mui/material";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
@@ -20,6 +19,8 @@ import Icon from "@mui/material/Icon";
 import { Menu as MenuType } from "@/types/menu";
 import Link from "next/link";
 import { flattenMenus } from "@/utils/helper";
+import useMenuStore from "@/store/menu";
+import useSidebarStore from "@/hooks/use-sidebar";
 
 export function isChildActive(
   menus: MenuType[],
@@ -143,20 +144,16 @@ const DropdownMenuItem = ({
 const NavRenderer = ({
   menus,
   isActive,
-  openMenu,
-  onToggle,
   depth = 0,
   sidebarOpen,
-  setActiveMenu,
 }: {
   menus: MenuType[];
   isActive: (url: string) => boolean;
-  openMenu: string | null;
-  onToggle: (id: string) => void;
   depth?: number;
   sidebarOpen: boolean;
-  setActiveMenu: (menu: MenuType | null) => void;
 }) => {
+  const { setActiveMenu } = useMenuStore();
+  const { openMenu, setOpenMenu, setMobileOpen } = useSidebarStore();
   const allMenus = flattenMenus(menus);
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const [dropdownMenu, setDropdownMenu] = React.useState<MenuType | null>(null);
@@ -183,6 +180,14 @@ const NavRenderer = ({
   const handleDropdownClose = () => {
     setAnchorEl(null);
     setDropdownMenu(null);
+  };
+
+  const handleToggle = (id: string) => {
+    setOpenMenu(
+      openMenu.includes(id)
+        ? openMenu.filter((item) => item !== id)
+        : [...openMenu, id]
+    );
   };
 
   return (
@@ -218,11 +223,8 @@ const NavRenderer = ({
                 <NavRenderer
                   menus={menu.children!}
                   isActive={isActive}
-                  openMenu={openMenu}
-                  onToggle={onToggle}
                   depth={depth + 1}
                   sidebarOpen={sidebarOpen}
-                  setActiveMenu={setActiveMenu}
                 />
               </List>
             </React.Fragment>
@@ -230,8 +232,8 @@ const NavRenderer = ({
         }
 
         if (isCollapsible) {
-          const isMenuSelected = isChildActive(menu.children!, isActive);
-          const isOpen = openMenu === menu.id || isMenuSelected;
+          const isMenuSelected = hasChildren && isChildActive(menu.children!, isActive);
+          const isOpen = openMenu.includes(menu.id);
 
           return (
             <React.Fragment key={itemKey}>
@@ -241,8 +243,7 @@ const NavRenderer = ({
                     if (!sidebarOpen && hasChildren) {
                       handleDropdownOpen(e, menu);
                     } else {
-                      if (isMenuSelected) return;
-                      onToggle(menu.id);
+                      handleToggle(menu.id);
                     }
                   }}
                   sx={{
@@ -285,11 +286,8 @@ const NavRenderer = ({
                     <NavRenderer
                       menus={menu.children!}
                       isActive={isActive}
-                      openMenu={openMenu}
-                      onToggle={onToggle}
                       depth={depth + 1}
                       sidebarOpen={sidebarOpen}
-                      setActiveMenu={setActiveMenu}
                     />
                   </List>
                 </Collapse>
@@ -299,7 +297,7 @@ const NavRenderer = ({
         }
 
         return (
-          <Link href={itemPath} key={itemKey} passHref>
+          <Link href={itemPath} key={itemKey} passHref onClick={() => setMobileOpen(false)}>
             <ListItem disablePadding>
               <ListItemButton
                 selected={isSelected}
@@ -357,7 +355,6 @@ const NavRenderer = ({
         );
       })}
 
-      {/* Dropdown Menu untuk sidebar yang tertutup */}
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
