@@ -5,7 +5,7 @@ import AlertDialog from '@/components/ui/alert'
 import { usePermission } from '@/hooks/use-permission'
 import { TableColumn } from '@/types/column'
 import { StockIO } from '@/types/stock'
-import { Box, Button } from '@mui/material'
+import { Box, Button, Icon, IconButton, Tooltip } from '@mui/material'
 import React, { useEffect } from 'react'
 import StockIOModal from '../../../components/modal/stock-io'
 import { stockIn } from '@/constant/enum'
@@ -89,9 +89,25 @@ export default function Page() {
               value={branches}
               setValue={setBranches}
             />
-            {permission.includes('add') && <Button onClick={() => setOpen(true)}>
-              New
-            </Button>}
+            <Box className="flex gap-2">
+              <Tooltip title="Refresh">
+                <IconButton
+                  onClick={() => {
+                    setPage(0)
+                    setOrderBy('created_date')
+                    setOrder('desc')
+                    query.refetch()
+                  }}
+                >
+                  <Icon>refresh</Icon>
+                </IconButton>
+              </Tooltip>
+              {permission.includes('add') && 
+                <Button onClick={() => setOpen(true)}>
+                  New
+                </Button>
+              }
+            </Box>
           </Box>
         }
       />
@@ -100,6 +116,7 @@ export default function Page() {
         onClose={() => setOpen(false)}
         options={[...stockIn]}
         title='Add Stock In'
+        disabledBranch={!permission.includes('filter')}
       />
       <AlertDialog
         title='Delete Stock'
