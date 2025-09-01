@@ -24,6 +24,8 @@ import {
 import type { PaymentMethod } from "@prisma/client"
 import { payment_method } from "@/constant/enum"
 import type { Stock } from "@/types/stock"
+import { useState } from "react"
+import { parseNumber, toCurrencyFormat } from "@/utils/helper"
 
 interface CartItem {
   stock: Stock
@@ -68,6 +70,7 @@ export function CheckoutDialog({
   getSubtotalAmount,
   getTotalAmount,
 }: CheckoutDialogProps) {
+  const [displayPaidAmount, setDisplayPaidAmount] = useState('0');
   const getChange = () => paidAmount - getTotalAmount()
 
   return (
@@ -154,9 +157,20 @@ export function CheckoutDialog({
             <TextField
               fullWidth
               label="Jumlah Bayar"
-              type="number"
-              value={paidAmount}
-              onChange={(e) => onPaidAmountChange(Number(e.target.value))}
+              // type="number"
+              value={displayPaidAmount}
+              onChange={(e) => {
+                const value = e.target.value;
+                const numeric = Number(parseNumber(value));
+
+                if (isNaN(numeric)) {
+                  setDisplayPaidAmount('0');
+                  onPaidAmountChange(0);
+                } else {
+                  setDisplayPaidAmount(toCurrencyFormat(numeric));
+                  onPaidAmountChange(value === '' ? 0 : numeric);
+                }
+              }}
               sx={{ mb: 2 }}
             />
 

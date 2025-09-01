@@ -36,7 +36,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!user && pathname !== '/login') fetchData()
   }, [router, user, pathname])
 
-  const logout = () => {
+  const logout = async () => {
+    await fetch('/api/logout', {
+      method: 'POST',
+    })
+
     setUser(null)
     router.push('/login')
   }

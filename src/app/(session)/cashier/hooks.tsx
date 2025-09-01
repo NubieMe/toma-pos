@@ -6,6 +6,7 @@ import type { Branch } from "@/types/branch"
 import { usePermission } from "@/hooks/use-permission"
 import { useAuth } from "@/context/auth-context"
 import type { PaymentMethod } from "@prisma/client"
+import useBranch from "@/hooks/use-branch"
 
 interface CartItem {
   stock: Stock
@@ -38,9 +39,9 @@ interface TransactionResult {
 export function useCashier() {
   const { permission } = usePermission()
   const { user } = useAuth()
+  const { query } = useBranch()
 
   const [stocks, setStocks] = React.useState<Stock[]>([])
-  const [branches, setBranches] = React.useState<Branch[]>([])
   const [selectedBranch, setSelectedBranch] = React.useState<string>("")
   const [cart, setCart] = React.useState<CartItem[]>([])
   const [charges, setCharges] = React.useState<ChargeItem[]>([])
@@ -58,10 +59,6 @@ export function useCashier() {
   React.useEffect(() => {
     setHasFilterPermission(permission.includes("filter"))
   }, [permission])
-
-  React.useEffect(() => {
-    fetchBranches()
-  }, [])
 
   React.useEffect(() => {
     if (user?.branch.id) {
@@ -85,16 +82,6 @@ export function useCashier() {
     )
     setFilteredStocks(filtered)
   }, [stocks, searchTerm])
-
-  const fetchBranches = async () => {
-    try {
-      const res = await fetch("/api/branch?limit=10000")
-      const { data } = await res.json()
-      setBranches(data)
-    } catch (error) {
-      console.error("Error fetching branches:", error)
-    }
-  }
 
   const fetchStocks = async () => {
     try {
@@ -218,11 +205,16 @@ export function useCashier() {
 
       console.log("Processing transaction:", transactionData)
 
+      await fetch("/api/cashier", {
+        method: "POST",
+        body: JSON.stringify(transactionData),
+      })
+
       // Generate transaction code (mock)
       const transactionCode = `TRX${Date.now().toString().slice(-6)}`
 
       // Save transaction result for printing
-      const currentBranch = branches.find((b) => b.id === selectedBranch)
+      const currentBranch = query.data?.find((b: Branch) => b.id === selectedBranch)
       if (currentBranch) {
         setLastTransaction({
           code: transactionCode,
@@ -266,7 +258,6 @@ export function useCashier() {
   return {
     // State
     stocks,
-    branches,
     selectedBranch,
     cart,
     charges,

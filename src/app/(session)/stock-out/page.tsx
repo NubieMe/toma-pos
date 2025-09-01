@@ -7,7 +7,7 @@ import { stockOut } from '@/constant/enum'
 import { usePermission } from '@/hooks/use-permission'
 import { TableColumn } from '@/types/column'
 import { StockIO } from '@/types/stock'
-import { Box, Button } from '@mui/material'
+import { Box, Button, Icon, IconButton, Tooltip } from '@mui/material'
 import { format } from 'date-fns'
 import React, { useEffect } from 'react'
 import StockIOModal from '../../../components/modal/stock-io'
@@ -93,9 +93,25 @@ export default function Page() {
               value={branches}
               setValue={setBranches}
             />
-            {permission.includes('add') && <Button onClick={() => setOpen(true)}>
-              New
-            </Button>}
+            <Box className="flex gap-2">
+              <Tooltip title="Refresh">
+                <IconButton
+                  onClick={() => {
+                    setPage(0)
+                    setOrderBy('created_date')
+                    setOrder('desc')
+                    query.refetch()
+                  }}
+                >
+                  <Icon>refresh</Icon>
+                </IconButton>
+              </Tooltip>
+              {permission.includes('add') && 
+                <Button onClick={() => setOpen(true)}>
+                  New
+                </Button>
+              }
+            </Box>
           </Box>
         }
       />
@@ -104,6 +120,7 @@ export default function Page() {
         onClose={() => setOpen(false)}
         options={[...stockOut]}
         title='Add Stock Out'
+        disabledBranch={!permission.includes('filter')}
       />
       <AlertDialog
         title='Delete Stock'

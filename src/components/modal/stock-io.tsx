@@ -19,13 +19,13 @@ import useBranch from '@/hooks/use-branch'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Item } from '@/types/item'
 import { Branch } from '@/types/branch'
+import { useAuth } from '@/context/auth-context'
 
 interface Props {
   open: boolean
   onClose: () => void
   options: Partial<IOType>[]
   title: string
-  branchId?: string
   disabledBranch?: boolean
 }
 
@@ -34,7 +34,6 @@ export default function StockIOModal({
   onClose,
   options,
   title,
-  branchId,
   disabledBranch = false,
 }: Props) {
   const queryClient = useQueryClient()
@@ -42,6 +41,7 @@ export default function StockIOModal({
   const [displayPrice, setDisplayPrice] = React.useState('0')
   const { query: itemsQuery } = useItem()
   const { query: branchesQuery } = useBranch()
+  const { user } = useAuth()
 
   const { handleSubmit, reset, watch, control } = useForm<z.infer<typeof stockIOSchema>>({
     resolver: zodResolver(stockIOSchema),
@@ -49,7 +49,7 @@ export default function StockIOModal({
     reValidateMode: 'onBlur',
     defaultValues: {
       item_id: '',
-      branch_id: branchId || '',
+      branch_id: user?.branch.id || '',
       to_id: '',
       type: options.length === 1 ? options[0] : undefined,
       price: 0,
@@ -64,9 +64,11 @@ export default function StockIOModal({
       branchesQuery.refetch()
     }
 
+    setDisplayQty('0')
+    setDisplayPrice('0')
     reset({
       item_id: '',
-      branch_id: branchId || '',
+      branch_id: user?.branch.id || '',
       to_id: '',
       type: options.length === 1 ? options[0] : undefined,
       price: 0,
