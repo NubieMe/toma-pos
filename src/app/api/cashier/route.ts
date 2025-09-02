@@ -90,10 +90,11 @@ export async function POST(req: NextRequest) {
       }
       seq.number++
 
+      transaction.date = date
       transaction.code = `INV/${branch.code}/${year.toString().substring(2)}/${romanizeMonth(month)}/${seq.number.toString().padStart(5, '0')}`
 
       const data = await ServiceFactory.create('transaction', transaction, user.id, undefined, tx)
-      await ServiceFactory.updateSequence(transaction.branch_id, seq, tx)
+      await ServiceFactory.updateSequence(seq.id, seq, tx)
       return data
     })
 
