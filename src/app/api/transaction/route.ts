@@ -12,6 +12,7 @@ export async function GET(req: NextRequest) {
         },
       },
       charges: true,
+      branch: true,
     });
 
     return NextResponse.json({ data, total });
