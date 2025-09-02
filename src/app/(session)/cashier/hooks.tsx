@@ -1,17 +1,22 @@
 "use client"
 
-import React from "react"
+import { useEffect, useState } from "react"
 import type { Stock } from "@/types/stock"
 import type { Branch } from "@/types/branch"
 import { usePermission } from "@/hooks/use-permission"
 import { useAuth } from "@/context/auth-context"
 import type { PaymentMethod } from "@prisma/client"
 import useBranch from "@/hooks/use-branch"
+import { useCompany } from "@/hooks/use-company"
 
 interface CartItem {
   stock: Stock
   quantity: number
   subtotal: number
+  discount_percent: boolean
+  discount_percentage: number
+  discount_amount: number
+  net_price: number
 }
 
 interface ChargeItem {
@@ -40,40 +45,41 @@ export function useCashier() {
   const { permission } = usePermission()
   const { user } = useAuth()
   const { query } = useBranch()
+  const { company, fetchCompany } = useCompany()
 
-  const [stocks, setStocks] = React.useState<Stock[]>([])
-  const [selectedBranch, setSelectedBranch] = React.useState<string>("")
-  const [cart, setCart] = React.useState<CartItem[]>([])
-  const [charges, setCharges] = React.useState<ChargeItem[]>([])
-  const [searchTerm, setSearchTerm] = React.useState("")
-  const [checkoutOpen, setCheckoutOpen] = React.useState(false)
-  const [chargesDialogOpen, setChargesDialogOpen] = React.useState(false)
-  const [printDialogOpen, setPrintDialogOpen] = React.useState(false)
-  const [lastTransaction, setLastTransaction] = React.useState<TransactionResult | null>(null)
-  const [loading, setLoading] = React.useState(true)
-  const [paymentMethod, setPaymentMethod] = React.useState<PaymentMethod>("cash")
-  const [paidAmount, setPaidAmount] = React.useState<number>(0)
-  const [hasFilterPermission, setHasFilterPermission] = React.useState(false)
-  const [filteredStocks, setFilteredStocks] = React.useState<Stock[]>([])
+  const [stocks, setStocks] = useState<Stock[]>([])
+  const [selectedBranch, setSelectedBranch] = useState<string>("")
+  const [cart, setCart] = useState<CartItem[]>([])
+  const [charges, setCharges] = useState<ChargeItem[]>([])
+  const [searchTerm, setSearchTerm] = useState("")
+  const [checkoutOpen, setCheckoutOpen] = useState(false)
+  const [chargesDialogOpen, setChargesDialogOpen] = useState(false)
+  const [printDialogOpen, setPrintDialogOpen] = useState(false)
+  const [lastTransaction, setLastTransaction] = useState<TransactionResult | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash")
+  const [paidAmount, setPaidAmount] = useState<number>(0)
+  const [hasFilterPermission, setHasFilterPermission] = useState(false)
+  const [filteredStocks, setFilteredStocks] = useState<Stock[]>([])
 
-  React.useEffect(() => {
+  useEffect(() => {
     setHasFilterPermission(permission.includes("filter"))
   }, [permission])
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (user?.branch.id) {
       setSelectedBranch(user.branch.id)
     }
   }, [user])
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (selectedBranch) {
       fetchStocks()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedBranch])
 
-  React.useEffect(() => {
+  useEffect(() => {
     const filtered = stocks.filter(
       (stock) =>
         stock.vendible &&
@@ -82,6 +88,11 @@ export function useCashier() {
     )
     setFilteredStocks(filtered)
   }, [stocks, searchTerm])
+
+  useEffect(() => {
+    if (!company) fetchCompany()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const fetchStocks = async () => {
     try {
@@ -102,23 +113,19 @@ export function useCashier() {
 
     if (existingItem) {
       if (existingItem.quantity < stock.qty) {
-        setCart(
-          cart.map((item) =>
-            item.stock.id === stock.id
-              ? { ...item, quantity: item.quantity + 1, subtotal: (item.quantity + 1) * stock.price }
-              : item,
-          ),
-        )
+        updateCartQuantity(stock.id, existingItem.quantity + 1)
       }
     } else {
-      setCart([
-        ...cart,
-        {
-          stock,
-          quantity: 1,
-          subtotal: stock.price,
-        },
-      ])
+      const newItem: CartItem = {
+        stock,
+        quantity: 1,
+        subtotal: stock.price,
+        discount_percent: false,
+        discount_percentage: 0,
+        discount_amount: 0,
+        net_price: stock.price,
+      }
+      setCart([...cart, newItem])
     }
   }
 
@@ -132,9 +139,49 @@ export function useCashier() {
     if (!stock || newQuantity > stock.qty) return
 
     setCart(
-      cart.map((item) =>
-        item.stock.id === stockId ? { ...item, quantity: newQuantity, subtotal: newQuantity * item.stock.price } : item,
-      ),
+      cart.map((item) => {
+        if (item.stock.id === stockId) {
+          const grossPrice = stock.price * newQuantity
+          const discountAmount = item.discount_percent
+            ? (grossPrice * item.discount_percentage) / 100
+            : item.discount_amount
+          const netPrice = grossPrice - discountAmount
+
+          return {
+            ...item,
+            quantity: newQuantity,
+            subtotal: grossPrice,
+            discount_amount: discountAmount,
+            net_price: netPrice,
+          }
+        }
+        return item
+      }),
+    )
+  }
+
+  const updateCartDiscount = (
+    stockId: string,
+    discountData: {
+      discount_percent: boolean
+      discount_percentage: number
+      discount_amount: number
+    },
+  ) => {
+    setCart(
+      cart.map((item) => {
+        if (item.stock.id === stockId) {
+          const grossPrice = item.stock.price * item.quantity
+          const netPrice = grossPrice - discountData.discount_amount
+
+          return {
+            ...item,
+            ...discountData,
+            net_price: netPrice,
+          }
+        }
+        return item
+      }),
     )
   }
 
@@ -159,7 +206,7 @@ export function useCashier() {
   }
 
   const getSubtotalAmount = () => {
-    return cart.reduce((total, item) => total + item.subtotal, 0)
+    return cart.reduce((total, item) => total + item.net_price, 0)
   }
 
   const getChargesAmount = () => {
@@ -186,9 +233,13 @@ export function useCashier() {
         branch_id: selectedBranch,
         products: cart.map((item) => ({
           stock_id: item.stock.id,
-          quantity: item.quantity,
+          qty: item.quantity,
           price: item.stock.price,
-          subtotal: item.subtotal,
+          discount_percent: item.discount_percent,
+          discount_percentage: item.discount_percentage,
+          discount_amount: item.discount_amount,
+          net_price: item.net_price,
+          ppn_percentage: company?.ppn,
         })),
         charges: charges.map((charge) => ({
           name: charge.name,
@@ -196,29 +247,30 @@ export function useCashier() {
           percentage: charge.percentage,
           amount: charge.percent ? (getSubtotalAmount() * charge.percentage) / 100 : charge.amount,
         })),
-        subtotal: getSubtotalAmount(),
-        charges_total: getChargesAmount(),
-        total: getTotalAmount(),
         payment_method: paymentMethod,
-        paid_amount: paidAmount,
+        paid: paidAmount >= getTotalAmount(),
+        amount: paidAmount,
       }
 
       console.log("Processing transaction:", transactionData)
 
-      await fetch("/api/cashier", {
+      const response = await fetch("/api/cashier", {
         method: "POST",
         body: JSON.stringify(transactionData),
       })
 
-      // Generate transaction code (mock)
-      const transactionCode = `TRX${Date.now().toString().slice(-6)}`
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.message || "Transaction failed")
+      }
 
       // Save transaction result for printing
       const currentBranch = query.data?.find((b: Branch) => b.id === selectedBranch)
       if (currentBranch) {
         setLastTransaction({
-          code: transactionCode,
-          date: new Date(),
+          code: result.data.code,
+          date: result.data.date,
           branch: currentBranch,
           cart: [...cart],
           charges: [...charges],
@@ -284,6 +336,7 @@ export function useCashier() {
     // Actions
     addToCart,
     updateCartQuantity,
+    updateCartDiscount,
     removeFromCart,
     addCharge,
     updateCharge,

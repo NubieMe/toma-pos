@@ -7,6 +7,7 @@ export const companySchema = z.object({
     phone: z.string().optional(),
     email: z.string().email().optional(),
     logo: z.string().optional(),
+    ppn: z.coerce.number().min(0, "PPN must be at least 0").max(100, "PPN cannot exceed 100"),
     category_auto: z.boolean(),
     category_format: z.string().optional(),
     category_separator: z.enum(separator).nullable(),

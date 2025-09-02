@@ -3,9 +3,10 @@
 import { Separator, separator } from '@/constant/enum'
 import { useCompany } from '@/hooks/use-company'
 import { Avatar, Box, Button, Checkbox, FormControl, FormControlLabel, FormHelperText, InputLabel, MenuItem, Paper, Select, TextField } from '@mui/material'
-import React from 'react'
+import { useEffect, useState } from 'react'
 import { Controller } from 'react-hook-form'
 import FormatInput from './components/format-input'
+import { convertNumber, parseNumber } from '@/utils/helper'
 
 export default function Page() {
   const {
@@ -16,8 +17,9 @@ export default function Page() {
     control,
     watch,
   } = useCompany()
+  const [displayPPN, setDisplayPPN] = useState('0')
 
-  React.useEffect(() => {
+  useEffect(() => {
     fetchCompany()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -117,6 +119,30 @@ export default function Page() {
                   disabled={loading}
                   error={!!fieldState.error}
                   helperText={fieldState.error?.message}
+                />
+              )}
+            />
+          </Box>
+
+          <Box className="grid grid-cols-2 items-center gap-10 mb-5">
+            <Controller
+              name='ppn'
+              control={control}
+              render={({ field, fieldState }) => (
+                <TextField
+                  label="PPN (%)"
+                  {...field}
+                  fullWidth
+                  value={displayPPN}
+                  onChange={e => {
+                    field.onChange(parseNumber(e.target.value));
+                    const formatted = convertNumber(e.target.value);
+  
+                    setDisplayPPN(formatted);
+                  }}
+                  disabled={loading}
+                  error={!!fieldState.error}
+                  helperText={fieldState.error?.message ? fieldState.error?.message : 'Masukkan 0 jika harga produk sudah termasuk PPN'}
                 />
               )}
             />
@@ -299,7 +325,7 @@ export default function Page() {
             )}
           </Box>
 
-          <div className='flex justify-end'>
+          <Box className='flex justify-end'>
             <Button
               type='submit'
               className='btn btn-primary'
@@ -307,7 +333,7 @@ export default function Page() {
             >
               Save
             </Button>
-          </div>
+          </Box>
         </form>
       </Paper>
 

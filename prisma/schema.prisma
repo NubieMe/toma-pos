@@ -159,6 +159,7 @@ model Company {
   phone              String?
   email              String?
   logo               String?
+  ppn                Float      @default(0)
   item_auto          Boolean    @default(false)
   item_format        String?
   item_separator     Separator?
