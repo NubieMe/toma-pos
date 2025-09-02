@@ -4,13 +4,13 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { companySchema } from '@/app/(session)/company/schema'
-import React from 'react'
+import { useState } from 'react'
 import { Company } from '@/types/company'
 import { toast } from './use-toast'
 
 export function useCompany() {
-  const [company, setCompany] = React.useState<Company | null>(null)
-  const [loading, setLoading] = React.useState(false)
+  const [company, setCompany] = useState<Company | null>(null)
+  const [loading, setLoading] = useState(false)
 
   const {
     control,
@@ -29,6 +29,7 @@ export function useCompany() {
       phone: '',
       email: '',
       logo: '',
+      ppn: 0,
       category_auto: false,
       category_format: '',
       category_separator: null,
@@ -53,6 +54,7 @@ export function useCompany() {
       phone: data?.phone || '',
       email: data?.email || '',
       logo: data?.logo || '',
+      ppn: data?.ppn || 0,
       category_auto: data?.category_auto || false,
       category_format: data?.category_format || '',
       category_separator: data?.category_separator || null,

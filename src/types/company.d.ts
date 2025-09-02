@@ -7,6 +7,7 @@ export type Company = {
     phone: string | null;
     email: string | null;
     logo: string | null;
+    ppn: number;
     category_auto: boolean;
     category_format: string | null;
     category_separator: Separator;
