@@ -62,7 +62,9 @@ export function ChargesDialog({
     setChargeName("")
     setIsPercent(false)
     setPercentage(0)
+    setDisplayPercentage("0")
     setAmount(0)
+    setDisplayAmount("0")
   }
 
   const handleEdit = (charge: ChargeItem) => {

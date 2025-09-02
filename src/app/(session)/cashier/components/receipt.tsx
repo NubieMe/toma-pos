@@ -4,11 +4,16 @@ import { forwardRef } from "react"
 import type { Stock } from "@/types/stock"
 import type { Branch } from "@/types/branch"
 import type { PaymentMethod } from "@prisma/client"
+import { format } from "date-fns"
 
 interface CartItem {
   stock: Stock
   quantity: number
   subtotal: number
+  discount_percent: boolean
+  discount_percentage: number
+  discount_amount: number
+  net_price: number
 }
 
 interface ChargeItem {
@@ -99,7 +104,7 @@ export const Receipt = forwardRef<HTMLDivElement, ReceiptProps>(
             No: {transactionCode}
           </Typography>
           <Typography variant="body2" sx={{ fontSize: "10px" }}>
-            {date.toLocaleString("id-ID")}
+            {format(date, 'dd MMM yyyy HH:mm:ss')}
           </Typography>
           <Typography variant="body2" sx={{ fontSize: "10px" }}>
             Kasir: {cashierName}
@@ -110,19 +115,42 @@ export const Receipt = forwardRef<HTMLDivElement, ReceiptProps>(
 
         {/* Items */}
         <Box sx={{ mb: 2 }}>
-          {cart.map((item, index) => (
-            <Box key={index} sx={{ mb: 1 }}>
-              <Typography variant="body2" sx={{ fontSize: "11px", fontWeight: "bold" }}>
-                {item.stock.item.name}
-              </Typography>
-              <Box sx={{ display: "flex", justifyContent: "space-between", fontSize: "10px" }}>
-                <Typography variant="body2">
-                  {item.quantity} x {formatCurrency(item.stock.price)}
+          {cart.map((item, index) => {
+            const grossPrice = item.stock.price * item.quantity
+            const hasDiscount = item.discount_amount > 0
+
+            return (
+              <Box key={index} sx={{ mb: 1 }}>
+                <Typography variant="body2" sx={{ fontSize: "11px", fontWeight: "bold" }}>
+                  {item.stock.item.name}
                 </Typography>
-                <Typography variant="body2">{formatCurrency(item.subtotal)}</Typography>
+                <Box sx={{ display: "flex", justifyContent: "space-between", fontSize: "10px" }}>
+                  <Typography variant="body2">
+                    {item.quantity} x {formatCurrency(item.stock.price)}
+                  </Typography>
+                  <Typography variant="body2">{formatCurrency(grossPrice)}</Typography>
+                </Box>
+
+                {/* Show discount if exists */}
+                {hasDiscount && (
+                  <Box sx={{ display: "flex", justifyContent: "space-between", fontSize: "10px", color: "red" }}>
+                    <Typography variant="body2">
+                      Diskon {item.discount_percent ? `${item.discount_percentage.toFixed(1)}%` : ""}
+                    </Typography>
+                    <Typography variant="body2">-{formatCurrency(item.discount_amount)}</Typography>
+                  </Box>
+                )}
+
+                {/* Show net price if there's discount */}
+                {hasDiscount && (
+                  <Box sx={{ display: "flex", justifyContent: "space-between", fontSize: "10px", fontWeight: "bold" }}>
+                    <Typography variant="body2">Subtotal</Typography>
+                    <Typography variant="body2">{formatCurrency(item.net_price)}</Typography>
+                  </Box>
+                )}
               </Box>
-            </Box>
-          ))}
+            )
+          })}
         </Box>
 
         <Divider sx={{ my: 1 }} />

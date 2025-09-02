@@ -1,13 +1,14 @@
 "use client"
 import { ShoppingCart as CartIcon } from "@mui/icons-material"
 import { Autocomplete, Box, Button, FormControl, Grid, TextField, Typography } from "@mui/material"
+import useBranch from "@/hooks/use-branch"
+import type { Branch } from "@/types/branch"
+import { useCashier } from "./hooks"
+import { ProductList } from "./components/product-list"
 import { CartSummary } from "./components/cart-summary"
 import { ChargesDialog } from "./components/charges-dialog"
 import { CheckoutDialog } from "./components/checkout-dialog"
-import { ProductList } from "./components/product-list"
-import { useCashier } from "./hooks"
-import useBranch from "@/hooks/use-branch"
-import { Branch } from "@/types/branch"
+import { PrintDialog } from "./components/print-dialog"
 
 export default function CashierPage() {
   const {
@@ -18,6 +19,8 @@ export default function CashierPage() {
     searchTerm,
     checkoutOpen,
     chargesDialogOpen,
+    printDialogOpen,
+    lastTransaction,
     loading,
     paymentMethod,
     paidAmount,
@@ -29,12 +32,14 @@ export default function CashierPage() {
     setSearchTerm,
     setCheckoutOpen,
     setChargesDialogOpen,
+    setPrintDialogOpen,
     setPaymentMethod,
     setPaidAmount,
 
     // Actions
     addToCart,
     updateCartQuantity,
+    updateCartDiscount,
     removeFromCart,
     addCharge,
     updateCharge,
@@ -46,9 +51,8 @@ export default function CashierPage() {
     getTotalAmount,
     formatCurrency,
   } = useCashier()
-  const {
-    query
-  } = useBranch()
+
+  const { query } = useBranch()
 
   return (
     <Box sx={{ p: 3 }}>
@@ -73,12 +77,7 @@ export default function CashierPage() {
             </Typography>
           )}
 
-          <Button
-            variant="contained"
-            startIcon={<CartIcon />}
-            onClick={() => setCheckoutOpen(true)}
-            disabled={cart.length === 0}
-          >
+          <Button startIcon={<CartIcon />} onClick={() => setCheckoutOpen(true)} disabled={cart.length === 0}>
             Keranjang ({cart.length})
           </Button>
         </Box>
@@ -101,6 +100,7 @@ export default function CashierPage() {
             cart={cart}
             charges={charges}
             onUpdateQuantity={updateCartQuantity}
+            onUpdateDiscount={updateCartDiscount}
             onRemoveFromCart={removeFromCart}
             onCheckout={() => setCheckoutOpen(true)}
             onOpenCharges={() => setChargesDialogOpen(true)}
@@ -135,6 +135,13 @@ export default function CashierPage() {
         formatCurrency={formatCurrency}
         getSubtotalAmount={getSubtotalAmount}
         getTotalAmount={getTotalAmount}
+      />
+
+      <PrintDialog
+        open={printDialogOpen}
+        transaction={lastTransaction}
+        onClose={() => setPrintDialogOpen(false)}
+        formatCurrency={formatCurrency}
       />
     </Box>
   )
