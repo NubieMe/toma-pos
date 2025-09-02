@@ -19,14 +19,7 @@ import {
 import { Delete as DeleteIcon, Edit as EditIcon } from "@mui/icons-material"
 import { useState } from "react"
 import { toCurrencyFormat } from "@/utils/helper"
-
-interface ChargeItem {
-  id: string
-  name: string
-  percent: boolean
-  percentage: number
-  amount: number
-}
+import { ChargeItem } from "@/types/cashier"
 
 interface ChargesDialogProps {
   open: boolean
