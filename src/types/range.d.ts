@@ -1,0 +1,1 @@
+type RangeType = 'week' | 'month' | 'year'
